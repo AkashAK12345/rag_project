@@ -1,0 +1,25 @@
+# Virtual environments
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment variables
+.env
+
+# Uploaded reports
+uploads/
+
+# Generated vector stores
+storage/default__vector_store.json
+storage/image__vector_store.json
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
