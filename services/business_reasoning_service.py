@@ -267,9 +267,19 @@ class BusinessReasoningService:
         )
         lines.append("")
 
+        # --- Preamble clarifying the nature of heuristic insights ---
+        if risks or opportunities or insights:
+            lines.append(
+                "NOTE: The signals below are HEURISTIC INFERENCES derived from "
+                "keyword patterns in the retrieved text. They are NOT direct facts "
+                "extracted from the data. Treat them as analytical suggestions to "
+                "consider alongside the retrieved evidence."
+            )
+            lines.append("")
+
         # --- Risks ---
         if risks:
-            lines.append("IDENTIFIED RISKS:")
+            lines.append("INFERRED RISK SIGNALS (keyword-pattern based — verify against retrieved data):")
             for risk in risks[:5]:
                 label = _SEVERITY_LABELS.get(risk.severity, "NOTICE")
                 domain_label = _DOMAIN_LABELS.get(risk.domain, risk.domain.value)
@@ -278,7 +288,7 @@ class BusinessReasoningService:
 
         # --- Opportunities ---
         if opportunities:
-            lines.append("IDENTIFIED OPPORTUNITIES:")
+            lines.append("INFERRED OPPORTUNITY SIGNALS (keyword-pattern based — verify against retrieved data):")
             for opp in opportunities[:3]:
                 domain_label = _DOMAIN_LABELS.get(opp.domain, opp.domain.value)
                 lines.append(f"  ✅ POSITIVE [{domain_label}] {opp.description}")

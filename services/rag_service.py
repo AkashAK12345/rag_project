@@ -140,22 +140,76 @@ class RagService:
         if forecast_context is not None and forecast_context.results:
             prompt_body += "\n\n" + self._format_forecast_block(forecast_context)
 
-        prompt = (
-            f"{prompt_body}\n\n"
-            f"Question: {question}\n\n"
-            "Instructions: You are GROVIT AI, the Digital CEO of this business.\n"
-            "Using only the business data provided above, answer the question accurately and concisely.\n"
-            "If the Deterministic Analytics section is present, DO NOT attempt to recalculate "
-            "metrics manually. Treat the Analytics section as ground-truth facts. Use it to "
-            "explain 'what' happened or 'how much', and use the Cross-Domain Insights to explain 'why'.\n"
-            "If the Forecasting Results section is present, DO NOT attempt to recalculate or "
-            "re-derive the forecasted values. Treat them as deterministic predictions produced "
-            "by a statistical engine. Explain what the forecast means for the business, "
-            "reference the methodology and confidence when relevant, and highlight the "
-            "prediction interval to set appropriate expectations.\n"
-            "If the data does not contain enough information to answer confidently, "
-            "state what is available and what is missing. Do not hallucinate."
+        # --- Build a grounding block from source context ---
+        # This is injected at the TOP of the prompt so the LLM cannot
+        # invent sources or confuse retrieved document count with record count.
+        grounding_lines = []
+        if reasoning_context is not None and hasattr(reasoning_context, "source_context"):
+            source_ctx = reasoning_context.source_context
+            total_docs = getattr(source_ctx, "total_documents", 0)
+            sections = getattr(source_ctx, "sections", [])
+            source_files = sorted({
+                obs.source_file
+                for section in sections
+                for obs in section.observations
+                if obs.source_file
+            })
+            grounding_lines.append(
+                f"Evidence: {total_docs} retrieved document(s) from the vector store."
+            )
+            if source_files:
+                grounding_lines.append(
+                    f"Source file(s): {', '.join(source_files)}"
+                )
+                logger.info(f"RagService: using metadata — files={source_files}")
+        grounding_note = (
+            "=== GROUNDING CONSTRAINTS ===\n"
+            + "\n".join(grounding_lines)
+            + "\n=== END GROUNDING ==="
+        ) if grounding_lines else ""
+
+        # --- Assemble the full prompt ---
+        system_instructions = (
+            "You are a precise, evidence-based business analyst assistant.\n"
+            "STRICT RULES — follow these before generating any word of your response:\n"
+            "  1. Use ONLY the information explicitly present in the retrieved context below.\n"
+            "  2. Do NOT invent observations, metrics, KPIs, recommendations, or insights\n"
+            "     that are not directly supported by the retrieved data.\n"
+            "  3. Do NOT infer totals, averages, or trends unless they are explicitly\n"
+            "     stated in the retrieved context.\n"
+            "  4. Do NOT confuse the number of retrieved_documents with the number of\n"
+            "     business records (e.g., employee count, transaction count).\n"
+            "  5. If the retrieved evidence is insufficient to answer the question,\n"
+            "     explicitly state what information IS available and what is MISSING.\n"
+            "  6. Distinguish clearly between: (a) facts from the data, (b) inferences\n"
+            "     you are drawing, and (c) information that is unavailable.\n"
+            "  7. Avoid generic executive language. Be concise and grounded.\n"
         )
+
+        if analytics_context is not None and analytics_context.analytics_text:
+            system_instructions += (
+                "  8. The Deterministic Analytics section contains pre-computed facts.\n"
+                "     Do NOT recalculate those metrics. Use them as ground truth to\n"
+                "     explain what happened and reference the Cross-Domain Insights\n"
+                "     to explain why.\n"
+            )
+
+        if forecast_context is not None and forecast_context.results:
+            system_instructions += (
+                "  9. The Forecasting Results section contains pre-computed predictions.\n"
+                "     Do NOT recalculate or re-derive them. Explain what the forecast\n"
+                "     means for the business, reference the methodology and confidence,\n"
+                "     and highlight the prediction interval.\n"
+            )
+
+        prompt_parts = []
+        if grounding_note:
+            prompt_parts.append(grounding_note)
+        prompt_parts.append(prompt_body)
+        prompt_parts.append(f"Question: {question}")
+        prompt_parts.append(system_instructions)
+
+        prompt = "\n\n".join(prompt_parts)
 
         logger.info("RagService.generate_response: sending context to LLM.")
 

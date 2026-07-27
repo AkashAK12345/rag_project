@@ -21,7 +21,10 @@ class IndexingService:
         Persists the index and updates metadata immediately.
         Used by the IngestionService pipeline.
         """
-        logger.info(f"IndexingService: preparing to index {len(documents)} documents for '{source_file}'")
+        doc_count = len(documents)
+        logger.info(
+            f"IndexingService: loaded '{source_file}' — {doc_count} document(s) to index."
+        )
         
         # Load metadata
         if os.path.exists(self.METADATA_FILE):
@@ -38,14 +41,21 @@ class IndexingService:
         
         index = load_existing_index()
         
-        doc_count = len(documents)
-        for i in range(0, doc_count, self.BATCH_SIZE):
-            batch = documents[i:i+self.BATCH_SIZE]
-            logger.info(f"Inserting batch {i // self.BATCH_SIZE + 1} for '{source_file}'")
+        total_batches = max(1, (doc_count + self.BATCH_SIZE - 1) // self.BATCH_SIZE)
+        indexed_so_far = 0
+
+        for batch_num, i in enumerate(range(0, doc_count, self.BATCH_SIZE), start=1):
+            batch = documents[i:i + self.BATCH_SIZE]
             for doc in batch:
                 index.insert(doc)
+            indexed_so_far += len(batch)
+            pct = int(indexed_so_far / doc_count * 100) if doc_count else 100
+            logger.info(
+                f"[{batch_num}/{total_batches}] Indexed {indexed_so_far}/{doc_count} "
+                f"documents ({pct}%) for '{source_file}'"
+            )
                 
-        logger.info(f"IndexingService: Persisting updated index to storage after '{source_file}'.")
+        logger.info(f"IndexingService: persisting updated index to storage after '{source_file}'.")
         index.storage_context.persist(persist_dir="./storage")
         
         indexed_files.add(source_file)

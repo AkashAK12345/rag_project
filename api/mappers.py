@@ -21,8 +21,15 @@ def map_response(response: Response, latency_ms: float) -> QueryResponse:
                 text = getattr(node, "text", "")
                 metadata = getattr(node, "metadata", {})
                 
-                file_name = metadata.get("file_name") or metadata.get("filename") or "unknown"
-                sheet_name = metadata.get("sheet")
+                # 'source_file' is the canonical key written by BaseReport._make_document().
+                # 'file_name' / 'filename' are legacy fallbacks for older indexed documents.
+                file_name = (
+                    metadata.get("source_file")
+                    or metadata.get("file_name")
+                    or metadata.get("filename")
+                    or "unknown"
+                )
+                sheet_name = metadata.get("sheet") or metadata.get("sheet_name") or None
                 
                 if len(text) > MAX_PREVIEW_LENGTH:
                     preview = text[:MAX_PREVIEW_LENGTH] + "..."
