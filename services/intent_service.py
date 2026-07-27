@@ -283,8 +283,9 @@ class RuleBasedIntentAnalyzer(BaseIntentAnalyzer):
         domain_scores: dict[BusinessDomain, int] = {}
         domain_report_types: dict[BusinessDomain, list[ReportType]] = {}
 
+        import re
         for keywords, domain, report_types in _DOMAIN_RULES:
-            hit_count = sum(1 for kw in keywords if kw in text)
+            hit_count = sum(1 for kw in keywords if re.search(r'\b' + re.escape(kw) + r'\b', text))
             if hit_count > 0:
                 domain_scores[domain] = hit_count
                 domain_report_types[domain] = report_types
@@ -328,8 +329,9 @@ class RuleBasedIntentAnalyzer(BaseIntentAnalyzer):
         best_type = QueryType.LOOKUP
         best_score = 0
 
+        import re
         for keywords, intent, query_type, weight in _INTENT_PATTERNS:
-            hit_count = sum(1 for kw in keywords if kw in text)
+            hit_count = sum(1 for kw in keywords if re.search(r'\b' + re.escape(kw) + r'\b', text))
             score = hit_count * weight
             if score > best_score:
                 best_score = score

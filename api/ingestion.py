@@ -3,8 +3,9 @@ import shutil
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from schemas.ingestion import IngestionResponse
 from services.ingestion_service import IngestionService
-from api.dependencies import require_roles
+from api.dependencies import require_roles, get_rag_service
 from models.user import Role
+from services.rag_service import RagService
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -27,7 +28,10 @@ UPLOAD_DIR = "./uploads"
     ),
     dependencies=[Depends(require_roles(Role.ADMIN, Role.MANAGER))],
 )
-async def ingest_file(file: UploadFile = File(...)):
+def ingest_file(
+    file: UploadFile = File(...),
+    rag_service: RagService = Depends(get_rag_service)
+):
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -58,6 +62,8 @@ async def ingest_file(file: UploadFile = File(...)):
     try:
         service = IngestionService()
         result = service.process_file(dest)
+        
+        rag_service.reload_index()
         
         return IngestionResponse(
             filename=file.filename,

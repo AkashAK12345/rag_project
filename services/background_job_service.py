@@ -33,8 +33,9 @@ class BackgroundJobService:
     file handles would be closed by the time the worker ran.
     """
 
-    def __init__(self, job_manager: JobManager) -> None:
+    def __init__(self, job_manager: JobManager, rag_service=None) -> None:
         self._job_manager = job_manager
+        self._rag_service = rag_service
         os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     # ------------------------------------------------------------------
@@ -146,6 +147,10 @@ class BackgroundJobService:
                 skipped_files=skipped_files,
                 processing_time_ms=round(wall_ms, 2),
             )
+            
+            if self._rag_service:
+                self._rag_service.reload_index()
+                
             logger.info(
                 f"Job {job_id}: COMPLETED — {indexed_documents} docs indexed, "
                 f"{len(skipped_files)} skipped, {wall_ms:.1f}ms."
@@ -254,6 +259,10 @@ class BackgroundJobService:
                 indexed_documents=report_result.document_count if report_result else 0,
                 processing_time_ms=round(wall_ms, 2),
             )
+            
+            if self._rag_service:
+                self._rag_service.reload_index()
+                
             logger.info(f"Sync Job {job_id}: COMPLETED — {result.record_count} records retrieved, {wall_ms:.1f}ms.")
 
         except Exception as exc:

@@ -1,6 +1,7 @@
 # services/rag_service.py
 
 import os
+import threading
 
 from llama_index.core import (
     VectorStoreIndex,
@@ -24,6 +25,7 @@ class RagService:
 
         self.persist_dir = "./storage"
         self.data_dir = "./data"
+        self._lock = threading.Lock()
 
         self._configure_models()
 
@@ -35,6 +37,24 @@ class RagService:
             streaming=False,
             similarity_top_k=3,
         )
+
+    def reload_index(self) -> None:
+        """
+        Reload the vector index from disk into memory.
+        Used to refresh the singleton state after new documents are ingested.
+        """
+        logger.info("RagService.reload_index: Loading updated index from storage...")
+        new_index = self._load_index()
+        new_query_engine = new_index.as_query_engine(
+            streaming=False,
+            similarity_top_k=3,
+        )
+        
+        with self._lock:
+            self.index = new_index
+            self.query_engine = new_query_engine
+            
+        logger.info("RagService.reload_index: Index successfully refreshed in memory.")
 
     def _configure_models(self):
 

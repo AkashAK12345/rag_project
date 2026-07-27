@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from models.user import SessionLocal, Role
-from api.dependencies import require_roles, get_job_manager
+from api.dependencies import require_roles, get_job_manager, get_rag_service
 from schemas.connector_config import ConnectorCreate, ConnectorResponse
+from services.rag_service import RagService
 from schemas.sync_job import SyncRequest, SyncResponse
 from schemas.connector_status import SyncHistoryResponse
 from services.connector_service import ConnectorService
@@ -78,14 +79,15 @@ def trigger_sync(
     payload: SyncRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    job_manager: JobManager = Depends(get_job_manager)
+    job_manager: JobManager = Depends(get_job_manager),
+    rag_service: RagService = Depends(get_rag_service)
 ):
     try:
         sync_service = SyncService(db, job_manager)
         response = sync_service.enqueue_sync(connector_id, payload)
         
         # We spawn BackgroundJobService's execute_sync_job directly here
-        bg_service = BackgroundJobService(job_manager)
+        bg_service = BackgroundJobService(job_manager, rag_service=rag_service)
         background_tasks.add_task(bg_service.execute_sync_job, response.job_id)
         
         return response

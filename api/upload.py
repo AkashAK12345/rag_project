@@ -1,9 +1,12 @@
+from typing import List, Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile, status
+from pydantic import WithJsonSchema
 from schemas.jobs import JobAcceptedResponse
 from services.background_job_service import BackgroundJobService
 from services.job_manager import JobManager
-from api.dependencies import get_job_manager, require_roles
+from api.dependencies import get_job_manager, require_roles, get_rag_service
 from models.user import Role
+from services.rag_service import RagService
 from core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -27,8 +30,23 @@ ALLOWED_EXTENSIONS = {".xlsx", ".xls", ".csv"}
 )
 async def upload_files(
     background_tasks: BackgroundTasks,
-    files: list[UploadFile] = File(...),
+    # NOTE:
+    # This schema override exists solely to restore the Swagger UI
+    # multi-file picker.
+    #
+    # FastAPI generates a valid OpenAPI 3.1 schema using
+    # `contentMediaType`, but the bundled Swagger UI currently renders
+    # arrays of UploadFile as `array<string>` instead of file inputs.
+    #
+    # Remove this workaround once the upstream Swagger UI issue is resolved.
+    files: list[
+        Annotated[
+            UploadFile,
+            WithJsonSchema({"type": "string", "format": "binary"})
+        ]
+    ] = File(...),
     job_manager: JobManager = Depends(get_job_manager),
+    rag_service: RagService = Depends(get_rag_service),
 ):
     logger.info(f"Upload request received: {len(files)} file(s).")
 
@@ -54,7 +72,7 @@ async def upload_files(
             )
 
     try:
-        job_service = BackgroundJobService(job_manager=job_manager)
+        job_service = BackgroundJobService(job_manager=job_manager, rag_service=rag_service)
         accepted = job_service.accept_upload(files)
         background_tasks.add_task(job_service.execute_job, accepted.job_id)
         logger.info(f"Upload accepted: job {accepted.job_id} queued for background indexing.")

@@ -152,5 +152,8 @@ class QueryService:
             f"({(t5 - tf) * 1000:.1f}ms) "
             f"| total pipeline={(t5 - t0) * 1000:.1f}ms"
         )
+        
+        # Attach the source nodes so map_response can include them in the API response
+        response.source_nodes = nodes
 
         return response
