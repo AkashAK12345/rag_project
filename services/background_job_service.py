@@ -116,16 +116,29 @@ class BackgroundJobService:
             for filename in job.uploaded_files:
                 file_path = os.path.join(UPLOAD_DIR, filename)
                 
+                base_progress = 10.0 + (processed_count / total_files) * 80.0
+                file_progress_weight = 80.0 / total_files if total_files > 0 else 0
+                
+                def update_progress(indexed_so_far: int, doc_count: int):
+                    if doc_count > 0:
+                        file_pct = indexed_so_far / doc_count
+                        current_progress = base_progress + (file_pct * file_progress_weight)
+                        self._job_manager.update_status(
+                            job_id=job_id,
+                            status=JobStatus.INDEXING,
+                            progress_percentage=current_progress,
+                            indexed_documents=indexed_documents + indexed_so_far
+                        )
+
                 # Progress checkpoint
-                progress = 10.0 + (processed_count / total_files) * 80.0
                 self._job_manager.update_status(
                     job_id=job_id,
                     status=JobStatus.INDEXING,
-                    progress_percentage=progress,
+                    progress_percentage=base_progress,
                 )
 
                 try:
-                    result = ingestion_service.process_file(file_path)
+                    result = ingestion_service.process_file(file_path, progress_callback=update_progress)
                     indexed_documents += result.document_count
                     processed_files.append(filename)
                 except Exception as e:
@@ -224,6 +237,17 @@ class BackgroundJobService:
                 sync_token=connector.sync_token,
             )
 
+            def update_sync_progress(indexed_so_far: int, doc_count: int):
+                if doc_count > 0:
+                    file_pct = indexed_so_far / doc_count
+                    current_progress = 70.0 + (file_pct * 30.0)
+                    self._job_manager.update_status(
+                        job_id=job_id,
+                        status=JobStatus.INDEXING,
+                        progress_percentage=current_progress,
+                        indexed_documents=indexed_so_far
+                    )
+
             # Progress -> 70% (Ingestion Phase)
             self._job_manager.update_status(
                 job_id=job_id,
@@ -233,7 +257,7 @@ class BackgroundJobService:
 
             # 2. Ingest Dataframes via IngestionService
             ingestion_service = IngestionService()
-            report_result = ingestion_service.process_connector_result(result)
+            report_result = ingestion_service.process_connector_result(result, progress_callback=update_sync_progress)
             
             # Update DB Connector state
             connector.last_sync_time = datetime.now(timezone.utc)

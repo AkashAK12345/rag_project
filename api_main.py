@@ -2,6 +2,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
 from services.rag_service import RagService
@@ -97,4 +98,26 @@ app.include_router(connectors_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api_main:app", host="0.0.0.0", port=8000, reload=False)
+    import sys
+
+    # Development mode with --dev enables reloading but specifically ignores
+    # runtime-generated directories to prevent the server from continuously
+    # restarting and wiping in-memory state when files are uploaded or indexed.
+    if "--dev" in sys.argv:
+        uvicorn.run(
+            "api_main:app",
+            host="0.0.0.0",
+            port=8000,
+            reload=True,
+            reload_excludes=[
+                "uploads",
+                "storage",
+                "metadata",
+                "*.db",
+                "*.sqlite",
+                "__pycache__"
+            ]
+        )
+    else:
+        # Production behavior remains unchanged (no reload)
+        uvicorn.run("api_main:app", host="0.0.0.0", port=8000, reload=False)

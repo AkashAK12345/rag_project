@@ -14,6 +14,7 @@ Pipeline:
 
 import os
 import time
+from typing import Callable, Optional
 
 from core.logging import get_logger
 from sources.base_source import BaseSource
@@ -31,7 +32,11 @@ class IngestionService:
     def __init__(self) -> None:
         self.indexing_service = IndexingService()
 
-    def process_connector_result(self, result: ConnectorResult) -> ReportResult:
+    def process_connector_result(
+        self, 
+        result: ConnectorResult,
+        progress_callback: Optional[Callable[[int, int], None]] = None
+    ) -> ReportResult:
         """
         Process a standardized ConnectorResult through the ingestion pipeline.
         
@@ -81,7 +86,8 @@ class IngestionService:
             logger.info(f"IngestionService: handing off {doc_count} documents to IndexingService.")
             self.indexing_service.index_documents(
                 documents=report_result.documents,
-                source_file=result.dataset_name
+                source_file=result.dataset_name,
+                progress_callback=progress_callback
             )
         else:
             logger.warning(f"IngestionService: zero documents produced for '{result.dataset_name}'. Skipping index.")
@@ -90,7 +96,11 @@ class IngestionService:
         logger.info(f"IngestionService: pipeline finished for '{result.dataset_name}' in {duration:.1f}ms")
         return report_result
 
-    def process_file(self, file_path: str) -> ReportResult:
+    def process_file(
+        self, 
+        file_path: str,
+        progress_callback: Optional[Callable[[int, int], None]] = None
+    ) -> ReportResult:
         """
         Legacy file ingestion pipeline. Wrapper to maintain backward compatibility.
         Converts file loading into a ConnectorResult.
@@ -120,4 +130,4 @@ class IngestionService:
             dataframes=df_map
         )
         
-        return self.process_connector_result(result)
+        return self.process_connector_result(result, progress_callback=progress_callback)

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Callable, Optional
 
 from core.logging import get_logger
 from loaders.excel_loader import load_single_excel
@@ -15,7 +15,12 @@ class IndexingService:
     UPLOAD_DIR = "./uploads"
     BATCH_SIZE = 500
 
-    def index_documents(self, documents: list, source_file: str) -> None:
+    def index_documents(
+        self, 
+        documents: list, 
+        source_file: str, 
+        progress_callback: Optional[Callable[[int, int], None]] = None
+    ) -> None:
         """
         Directly index a pre-parsed list of LlamaIndex Documents.
         Persists the index and updates metadata immediately.
@@ -54,6 +59,8 @@ class IndexingService:
                 f"[{batch_num}/{total_batches}] Indexed {indexed_so_far}/{doc_count} "
                 f"documents ({pct}%) for '{source_file}'"
             )
+            if progress_callback:
+                progress_callback(indexed_so_far, doc_count)
                 
         logger.info(f"IndexingService: persisting updated index to storage after '{source_file}'.")
         index.storage_context.persist(persist_dir="./storage")
