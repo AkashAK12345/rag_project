@@ -103,6 +103,9 @@ class RetrievalService:
         ]
 
         if meaningful_domains:
+            # Always include UNKNOWN so generic documents are still searchable
+            meaningful_domains.append(BusinessDomain.UNKNOWN)
+            
             domain_filters = [
                 MetadataFilter(
                     key="business_domain",
