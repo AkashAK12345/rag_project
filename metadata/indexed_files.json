@@ -1,8 +1,9 @@
 {
     "indexed_files": [
-        "processed_data.xlsx",
-        "WorkLocationReport.xls_080526060115AM950 (1).xlsx",
         "dummy.csv",
-        "dummy_report.csv"
+        "dummy_report.csv",
+        "processed_data.xlsx",
+        "Purchase Report Alwarpet.xlsx",
+        "WorkLocationReport.xls_080526060115AM950 (1).xlsx"
     ]
 }

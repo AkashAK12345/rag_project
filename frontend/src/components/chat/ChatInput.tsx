@@ -36,23 +36,25 @@ export function ChatInput({ onSend, isLoading }: ChatInputProps) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={isLoading}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                color="primary"
-                onClick={handleSend}
-                disabled={!value.trim() || isLoading}
-                edge="end"
-              >
-                {isLoading ? <CircularProgress size={24} color="inherit" /> : <Send />}
-              </IconButton>
-            </InputAdornment>
-          ),
-          sx: {
-            borderRadius: 3,
-            bgcolor: 'action.hover',
-            '& fieldset': { border: 'none' },
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  color="primary"
+                  onClick={handleSend}
+                  disabled={!value.trim() || isLoading}
+                  edge="end"
+                >
+                  {isLoading ? <CircularProgress size={24} color="inherit" /> : <Send />}
+                </IconButton>
+              </InputAdornment>
+            ),
+            sx: {
+              borderRadius: 3,
+              bgcolor: 'action.hover',
+              '& fieldset': { border: 'none' },
+            },
           },
         }}
       />
