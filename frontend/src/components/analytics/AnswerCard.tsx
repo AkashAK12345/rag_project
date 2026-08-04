@@ -1,72 +1,55 @@
 // src/components/analytics/AnswerCard.tsx
 import type { ReactNode } from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Stack,
-  Skeleton,
-  Divider,
-  Chip,
-} from '@mui/material';
+import { Card, CardContent, Typography, Box, Stack, Skeleton, Chip } from '@mui/material';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import { SourceDocuments } from '../common/SourceDocuments';
 import { ResponseMetadata } from '../common/ResponseMetadata';
 import type { QueryResponse } from '@/types/query';
+import { brand, semantic } from '@/theme/colors';
+import { radius } from '@/theme/radius';
+import { shadows } from '@/theme/shadows';
 
 // ── Prop types ────────────────────────────────────────────────────────────────
 
 interface AnswerCardProps {
   /** Section title displayed in the card header. */
   title: string;
-  /** MUI icon node rendered in the accent badge. */
+  /** Icon node rendered in the accent badge. */
   icon: ReactNode;
   /** Response data from the RAG query, or undefined while loading/errored. */
   data: QueryResponse | undefined;
   isLoading: boolean;
   isError: boolean;
-  /** Called when the user clicks the inline Retry button on an errored card. */
+  /** Called when the user clicks the inline Retry chip on an errored card. */
   onRetry: () => void;
-  /** Controls the accent badge background colour. Defaults to 'primary'. */
+  /** Controls the accent strip colour. Defaults to 'primary'. */
   accentColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'error';
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// Accent color → visual tokens
+const accentMap: Record<string, { strip: string; iconBg: string; iconColor: string }> = {
+  primary:   { strip: brand.orange,    iconBg: brand.orangeSubtle,      iconColor: brand.orange },
+  secondary: { strip: semantic.info,   iconBg: semantic.infoSubtle,     iconColor: semantic.info },
+  success:   { strip: semantic.success, iconBg: semantic.successSubtle, iconColor: semantic.success },
+  warning:   { strip: semantic.warning, iconBg: semantic.warningSubtle, iconColor: semantic.warning },
+  error:     { strip: semantic.error,   iconBg: semantic.errorSubtle,   iconColor: semantic.error },
+};
 
-/**
- * Skeleton placeholder shown while the query is in flight.
- * Matches the approximate visual weight of a loaded answer.
- */
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+
 function LoadingSkeleton() {
   return (
-    <Box>
-      <Skeleton variant="text" width="55%" height={20} sx={{ mb: 1.5 }} />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="92%" />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="78%" sx={{ mb: 2 }} />
-      <Skeleton variant="text" width="88%" />
-      <Skeleton variant="text" width="65%" />
+    <Box sx={{ pt: 0.5 }}>
+      <Skeleton variant="text" width="45%" height={20} sx={{ mb: 1.5, borderRadius: 1 }} />
+      {[100, 100, 92, 100, 78, 88, 65].map((w, i) => (
+        <Skeleton key={i} variant="text" width={`${w}%`} sx={{ mb: 0.5, borderRadius: 1 }} />
+      ))}
     </Box>
   );
 }
 
-
-
 // ── Main component ────────────────────────────────────────────────────────────
 
-/**
- * AnswerCard — the single reusable card used for every analytics section.
- *
- * Handles three states internally:
- *   - Loading  → skeleton lines matching the card's expected content height
- *   - Error    → inline error message + Retry chip (does not fill the page)
- *   - Data     → verbatim answer text, collapsible sources, metadata footer
- *
- * The answer text is displayed with `whiteSpace: pre-line` so that line breaks
- * produced by the LLM are preserved without treating the output as code.
- */
 export function AnswerCard({
   title,
   icon,
@@ -76,71 +59,105 @@ export function AnswerCard({
   onRetry,
   accentColor = 'primary',
 }: AnswerCardProps) {
+  const accent = accentMap[accentColor] ?? accentMap.primary;
+
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* ── Header ── */}
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
+    <Card
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: `${radius.card}px`,
+        boxShadow: shadows.card,
+        border: 'none',
+        overflow: 'hidden',
+        transition: 'box-shadow 200ms ease',
+        '&:hover': { boxShadow: shadows.cardHover },
+      }}
+    >
+      {/* Orange accent strip */}
+      <Box sx={{ height: 4, bgcolor: accent.strip, flexShrink: 0 }} />
+
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
+        {/* Header */}
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 3 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
+              width: 44,
+              height: 44,
+              borderRadius: `${radius.avatar}px`,
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: `${accentColor}.main`,
-              color: `${accentColor}.contrastText`,
+              bgcolor: accent.iconBg,
+              color: accent.iconColor,
+              '& svg': { width: 20, height: 20 },
             }}
           >
             {icon}
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
             {title}
           </Typography>
         </Stack>
 
-        <Divider sx={{ mb: 2 }} />
-
-        {/* ── Loading state ── */}
+        {/* Loading */}
         {isLoading && <LoadingSkeleton />}
 
-        {/* ── Error state ── */}
+        {/* Error */}
         {isError && !isLoading && (
           <Stack
-            spacing={1}
+            spacing={1.5}
             sx={{
               flexGrow: 1,
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
-              py: 4,
+              py: 5,
             }}
           >
-            <Typography variant="body2" color="error.main" sx={{ fontWeight: 600 }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: `${radius.avatar}px`,
+                bgcolor: semantic.errorSubtle,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <AlertCircle size={22} color={semantic.error} />
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
               Query failed
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 320 }}>
-              The analytics query could not be completed. Check that the backend is
-              running and that reports have been indexed.
+            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 300, lineHeight: 1.5 }}>
+              Make sure reports are indexed and the backend is running.
             </Typography>
             <Chip
               label="Retry"
+              icon={<RefreshCw size={10} />}
               onClick={onRetry}
-              color="primary"
-              variant="outlined"
               size="small"
-              clickable
-              sx={{ mt: 1 }}
+              sx={{
+                mt: 0.5,
+                bgcolor: brand.orangeSubtle,
+                color: brand.orange,
+                fontWeight: 700,
+                borderRadius: `${radius.full}px`,
+                border: `1px solid ${brand.orange}33`,
+                cursor: 'pointer',
+                '& .MuiChip-icon': { color: brand.orange, ml: '6px' },
+              }}
             />
           </Stack>
         )}
 
-        {/* ── Data state ── */}
+        {/* Data */}
         {!isLoading && !isError && data && (
           <Box sx={{ flexGrow: 1 }}>
-            {/* Answer text — verbatim from backend, line breaks preserved */}
             <Typography
               variant="body2"
               sx={{ lineHeight: 1.85, whiteSpace: 'pre-line', color: 'text.primary' }}
@@ -148,20 +165,16 @@ export function AnswerCard({
               {data.answer}
             </Typography>
 
-            {/* Sources */}
             {data.sources.length > 0 && (
-              <>
-                <Divider sx={{ mt: 2.5 }} />
+              <Box sx={{ mt: 2.5, pt: 2, borderTop: (t) => `1px solid ${t.palette.divider}` }}>
                 <SourceDocuments sources={data.sources} />
-              </>
+              </Box>
             )}
 
-            {/* Metadata footer */}
             {data.metadata && (
-              <>
-                <Divider sx={{ mt: 2 }} />
+              <Box sx={{ mt: 1.5, pt: 1.5, borderTop: (t) => `1px solid ${t.palette.divider}` }}>
                 <ResponseMetadata metadata={data.metadata} />
-              </>
+              </Box>
             )}
           </Box>
         )}

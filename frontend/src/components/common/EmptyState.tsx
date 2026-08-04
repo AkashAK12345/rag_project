@@ -1,6 +1,8 @@
 // src/components/common/EmptyState.tsx
 import { Box, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
+import { brand } from '@/theme/colors';
+import { radius } from '@/theme/radius';
 
 interface EmptyStateProps {
   icon: ReactNode;
@@ -18,19 +20,31 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        p: 6,
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        border: (t) => `1px dashed ${t.palette.divider}`,
+        py: 8,
+        px: 4,
       }}
     >
-      <Box sx={{ color: 'text.disabled', '& > svg': { fontSize: 64, mb: 2 } }}>
+      {/* Icon container */}
+      <Box
+        sx={{
+          width: 72,
+          height: 72,
+          borderRadius: `${radius.avatar}px`,
+          bgcolor: brand.orangeSubtle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 3,
+          '& svg': { color: brand.orange, width: 32, height: 32 },
+        }}
+      >
         {icon}
       </Box>
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
         {title}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 380, lineHeight: 1.65 }}>
         {description}
       </Typography>
       {action && <Box>{action}</Box>}

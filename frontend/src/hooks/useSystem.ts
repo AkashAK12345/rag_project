@@ -6,7 +6,7 @@ export function useSystemHealth() {
   return useQuery({
     queryKey: ['system', 'health'],
     queryFn: systemApi.health,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 }
 
@@ -14,7 +14,7 @@ export function useIndexStats() {
   return useQuery({
     queryKey: ['system', 'index'],
     queryFn: systemApi.indexStats,
-    refetchInterval: 60000,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 }
 
@@ -22,6 +22,7 @@ export function useModelConfigs() {
   return useQuery({
     queryKey: ['system', 'models'],
     queryFn: systemApi.modelConfigs,
-    staleTime: Infinity, // Models don't change often
+    refetchInterval: 300000, // Refresh every 5 minutes
+    staleTime: 300000,
   });
 }

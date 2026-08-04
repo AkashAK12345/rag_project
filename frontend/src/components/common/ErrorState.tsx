@@ -1,6 +1,8 @@
 // src/components/common/ErrorState.tsx
 import { Box, Typography, Button } from '@mui/material';
-import { Error as ErrorIcon } from '@mui/icons-material';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { semantic } from '@/theme/colors';
+import { radius } from '@/theme/radius';
 
 interface ErrorStateProps {
   title?: string;
@@ -8,10 +10,10 @@ interface ErrorStateProps {
   onRetry?: () => void;
 }
 
-export function ErrorState({ 
-  title = 'Something went wrong', 
-  message = 'Failed to load data. Please try again later.', 
-  onRetry 
+export function ErrorState({
+  title = 'Something went wrong',
+  message = 'Failed to load data. Please try again later.',
+  onRetry,
 }: ErrorStateProps) {
   return (
     <Box
@@ -21,22 +23,42 @@ export function ErrorState({
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        p: 6,
-        bgcolor: 'error.main',
-        bgcolorOpacity: 0.05,
-        borderRadius: 2,
-        border: (t) => `1px solid ${t.palette.divider}`,
+        py: 6,
+        px: 4,
+        bgcolor: semantic.errorSubtle,
+        borderRadius: `${radius.card}px`,
       }}
     >
-      <ErrorIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+      <Box
+        sx={{
+          width: 56,
+          height: 56,
+          borderRadius: `${radius.avatar}px`,
+          bgcolor: `${semantic.error}18`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 2.5,
+        }}
+      >
+        <AlertCircle size={26} color={semantic.error} />
+      </Box>
+
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.75, color: semantic.errorDark }}>
         {title}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3, maxWidth: 380 }}>
         {message}
       </Typography>
       {onRetry && (
-        <Button variant="outlined" color="inherit" onClick={onRetry}>
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          startIcon={<RefreshCw size={14} />}
+          onClick={onRetry}
+          sx={{ borderRadius: `${radius.button}px` }}
+        >
           Try Again
         </Button>
       )}

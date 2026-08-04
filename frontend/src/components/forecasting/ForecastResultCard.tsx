@@ -1,16 +1,4 @@
 // src/components/forecasting/ForecastResultCard.tsx
-//
-// Displays the result of a forecast query.
-//
-// Reuses:
-//   - AnswerCard layout/styling patterns (loading skeleton, error inline, data body)
-//   - SourceDocuments component (collapsible source list)
-//   - ResponseMetadata component (latency, model, doc count footer)
-//
-// This component does NOT duplicate any existing functionality. All state
-// management (loading, error, data) is owned by the parent (ForecastingPage).
-// The component only receives and renders.
-
 import type { ReactNode } from 'react';
 import {
   Card,
@@ -25,60 +13,49 @@ import {
   alpha,
 } from '@mui/material';
 import {
-  ShowChart,
-  ErrorOutlined,
-  Refresh,
-  CheckCircleOutlined,
-} from '@mui/icons-material';
+  LineChart,
+  AlertCircle,
+  RefreshCw,
+  CheckCircle2,
+} from 'lucide-react';
 import { SourceDocuments } from '@/components/common/SourceDocuments';
 import { ResponseMetadata } from '@/components/common/ResponseMetadata';
 import type { QueryResponse } from '@/types/query';
 import type { ForecastMetricKey, ForecastHorizonKey } from '@/types/forecastingTypes';
 import { FORECAST_METRIC_MAP, FORECAST_HORIZON_MAP } from '@/constants/forecastingConstants';
-
-// ── Props ─────────────────────────────────────────────────────────────────────
+import { radius } from '@/theme/radius';
+import { shadows } from '@/theme/shadows';
 
 interface ForecastResultCardProps {
-  /** The forecast response from the API. Undefined while loading. */
   data: QueryResponse | undefined;
-  /** True while the forecast mutation is in flight. */
   isLoading: boolean;
-  /** True if the last mutation ended in an error. */
   isError: boolean;
-  /** Human-readable error message (from Error.message). */
   errorMessage?: string;
-  /** Callback to retry the last forecast request. */
   onRetry: () => void;
-  /** The metric keys that were used in the last request — for header badges. */
   requestedMetrics: ForecastMetricKey[];
-  /** The horizon key that was used in the last request — for header badge. */
   requestedHorizon: ForecastHorizonKey;
 }
-
-// ── Loading skeleton ───────────────────────────────────────────────────────────
 
 function ForecastLoadingSkeleton() {
   return (
     <Box>
-      <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-        <Skeleton variant="rounded" width={100} height={24} />
-        <Skeleton variant="rounded" width={80} height={24} />
-        <Skeleton variant="rounded" width={90} height={24} />
+      <Stack direction="row" spacing={1} sx={{ mb: 3 }}>
+        <Skeleton variant="rounded" width={100} height={24} sx={{ borderRadius: `${radius.full}px` }} />
+        <Skeleton variant="rounded" width={80} height={24} sx={{ borderRadius: `${radius.full}px` }} />
+        <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: `${radius.full}px` }} />
       </Stack>
-      <Skeleton variant="text" width="60%" height={22} sx={{ mb: 1.5 }} />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="88%" />
-      <Skeleton variant="text" width="100%" />
-      <Skeleton variant="text" width="73%" sx={{ mb: 2 }} />
-      <Skeleton variant="text" width="95%" />
-      <Skeleton variant="text" width="80%" />
-      <Skeleton variant="text" width="65%" />
+      <Skeleton variant="text" width="60%" height={24} sx={{ mb: 2 }} />
+      <Skeleton variant="text" width="100%" height={20} />
+      <Skeleton variant="text" width="100%" height={20} />
+      <Skeleton variant="text" width="88%" height={20} />
+      <Skeleton variant="text" width="100%" height={20} />
+      <Skeleton variant="text" width="73%" height={20} sx={{ mb: 3 }} />
+      <Skeleton variant="text" width="95%" height={20} />
+      <Skeleton variant="text" width="80%" height={20} />
+      <Skeleton variant="text" width="65%" height={20} />
     </Box>
   );
 }
-
-// ── Header badge row ───────────────────────────────────────────────────────────
 
 function ForecastBadgeRow({
   metrics,
@@ -101,7 +78,7 @@ function ForecastBadgeRow({
             color={metricOption.color}
             size="small"
             variant="outlined"
-            sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+            sx={{ fontWeight: 700, fontSize: '0.75rem', borderRadius: `${radius.full}px` }}
           />
         );
       })}
@@ -111,19 +88,18 @@ function ForecastBadgeRow({
           size="small"
           variant="filled"
           sx={{
-            fontWeight: 700,
+            fontWeight: 800,
             fontSize: '0.75rem',
             bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
             color: 'primary.main',
             border: 'none',
+            borderRadius: `${radius.full}px`,
           }}
         />
       )}
     </Stack>
   );
 }
-
-// ── Main component ─────────────────────────────────────────────────────────────
 
 export function ForecastResultCard({
   data,
@@ -136,51 +112,65 @@ export function ForecastResultCard({
 }: ForecastResultCardProps) {
   return (
     <Card
+      elevation={0}
       sx={{
-        border: (t) => `1px solid ${t.palette.divider}`,
-        borderRadius: 3,
-        overflow: 'visible',
+        border: 'none',
+        borderRadius: `${radius.card}px`,
+        boxShadow: shadows.card,
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
-      <CardContent sx={{ p: 3 }}>
+      {/* Top accent strip */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          background: (t) => `linear-gradient(90deg, ${t.palette.primary.main}, ${t.palette.secondary.main})`,
+        }}
+      />
+      <CardContent sx={{ p: { xs: 3, md: 4 }, pt: { xs: 4, md: 5 } }}>
 
         {/* ── Card Header ─────────────────────────────────────────────────── */}
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
+        <Stack direction="row" spacing={2.5} sx={{ alignItems: 'flex-start', mb: 3 }}>
           <Box
             sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 2,
+              width: 48,
+              height: 48,
+              borderRadius: `${radius.chip}px`,
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: (t) =>
-                `linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.secondary.main} 100%)`,
-              color: 'white',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              background: (t) => alpha(t.palette.primary.main, 0.1),
+              color: 'primary.main',
             }}
           >
-            <ShowChart sx={{ fontSize: 22 }} />
+            <LineChart size={24} />
           </Box>
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          <Box sx={{ flexGrow: 1, pt: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.01em', mb: 0.5 }}>
               Forecast Results
             </Typography>
             {/* Show status badge when not loading */}
             {!isLoading && (
-              <Box sx={{ mt: 0.75 }}>
+              <Box sx={{ mt: 1 }}>
                 <ForecastBadgeRow metrics={requestedMetrics} horizon={requestedHorizon} />
               </Box>
             )}
           </Box>
           {/* Success indicator */}
           {!isLoading && !isError && data && (
-            <CheckCircleOutlined sx={{ color: 'success.main', fontSize: 22 }} />
+            <Box sx={{ pt: 1 }}>
+              <CheckCircle2 size={24} color="var(--mui-palette-success-main)" />
+            </Box>
           )}
         </Stack>
 
-        <Divider sx={{ mb: 2.5 }} />
+        <Divider sx={{ mb: 3, opacity: 0.6 }} />
 
         {/* ── Loading state ────────────────────────────────────────────────── */}
         {isLoading && <ForecastLoadingSkeleton />}
@@ -189,28 +179,30 @@ export function ForecastResultCard({
         {isError && !isLoading && (
           <Box
             sx={{
-              p: 3,
-              borderRadius: 2,
-              bgcolor: (t) => alpha(t.palette.error.main, 0.06),
-              border: (t) => `1px solid ${alpha(t.palette.error.main, 0.2)}`,
+              p: 4,
+              borderRadius: `${radius.card}px`,
+              bgcolor: (t) => alpha(t.palette.error.main, 0.04),
+              border: (t) => `1px solid ${alpha(t.palette.error.main, 0.1)}`,
             }}
           >
-            <Stack spacing={1.5} sx={{ alignItems: 'center', textAlign: 'center' }}>
-              <ErrorOutlined sx={{ fontSize: 44, color: 'error.main' }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main' }}>
-                Forecast Failed
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420 }}>
-                {errorMessage ??
-                  'The forecast query could not be completed. Ensure the backend is running and that reports have been indexed.'}
-              </Typography>
+            <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
+              <AlertCircle size={48} color="var(--mui-palette-error-main)" />
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: 'error.main', mb: 1 }}>
+                  Forecast Failed
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: 'auto', lineHeight: 1.6 }}>
+                  {errorMessage ??
+                    'The forecast query could not be completed. Ensure the backend is running and that reports have been indexed.'}
+                </Typography>
+              </Box>
               <Button
                 id="forecast-retry-button"
                 variant="outlined"
                 color="error"
-                startIcon={<Refresh />}
+                startIcon={<RefreshCw size={16} />}
                 onClick={onRetry}
-                sx={{ mt: 0.5, fontWeight: 600 }}
+                sx={{ mt: 1, fontWeight: 700, borderRadius: `${radius.button}px`, px: 3 }}
               >
                 Retry Forecast
               </Button>
@@ -221,30 +213,28 @@ export function ForecastResultCard({
         {/* ── Data state ───────────────────────────────────────────────────── */}
         {!isLoading && !isError && data && (
           <Box>
-            {/* Answer narrative — verbatim from the LLM, line breaks preserved */}
             <Typography
-              variant="body2"
+              variant="body1"
               sx={{
                 lineHeight: 1.85,
                 whiteSpace: 'pre-line',
                 color: 'text.primary',
+                fontSize: '0.9375rem',
               }}
             >
               {data.answer}
             </Typography>
 
-            {/* Source documents (collapsible) */}
             {data.sources.length > 0 && (
               <>
-                <Divider sx={{ mt: 2.5 }} />
+                <Box sx={{ mt: 4 }} />
                 <SourceDocuments sources={data.sources} />
               </>
             )}
 
-            {/* Metadata footer */}
             {data.metadata && (
               <>
-                <Divider sx={{ mt: 2 }} />
+                <Divider sx={{ mt: 3, mb: 2, opacity: 0.6 }} />
                 <ResponseMetadata metadata={data.metadata} />
               </>
             )}

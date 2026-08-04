@@ -22,7 +22,7 @@ const queryClient = new QueryClient({
 export default function App() {
   const [mode, setMode] = useState<PaletteMode>(() => {
     const saved = localStorage.getItem('theme_mode');
-    return saved === 'light' ? 'light' : 'dark';
+    return saved === 'dark' ? 'dark' : 'light';
   });
 
   const toggleTheme = () =>

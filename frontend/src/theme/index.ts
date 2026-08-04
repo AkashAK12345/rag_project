@@ -1,97 +1,241 @@
 // src/theme/index.ts
+// GROVIT AI — Master theme composer
+// Imports all design tokens and builds the MUI theme for light and dark modes.
+
 import { createTheme, type PaletteMode } from '@mui/material';
+import { brand, neutral, semantic, dark } from './colors';
+import { fontFamily, typeScale } from './typography';
+import { spacing } from './spacing';
+import { radius } from './radius';
+import { shadows as appShadows } from './shadows';
+import { durations, easings } from './transitions';
 
-// ── Design tokens ────────────────────────────────────────────────────────────
-const SIDEBAR_WIDTH = 240;
-const SIDEBAR_COLLAPSED_WIDTH = 64;
+// Re-export layout constants consumed by AppLayout
+export const SIDEBAR_WIDTH          = spacing.sidebarWidth;
+export const SIDEBAR_COLLAPSED_WIDTH = spacing.sidebarCollapsedWidth;
 
-export { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH };
+export const createAppTheme = (mode: PaletteMode) => {
+  const isLight = mode === 'light';
 
-// ── Colour palette ───────────────────────────────────────────────────────────
-const palette = {
-  primary: { main: '#6366F1', light: '#818CF8', dark: '#4338CA' }, // indigo
-  secondary: { main: '#0EA5E9', light: '#38BDF8', dark: '#0284C7' }, // sky
-  success: { main: '#10B981', dark: '#059669' },
-  warning: { main: '#F59E0B', dark: '#D97706' },
-  error: { main: '#EF4444', dark: '#DC2626' },
-};
-
-export const createAppTheme = (mode: PaletteMode) =>
-  createTheme({
+  return createTheme({
+    // ── Palette ──────────────────────────────────────────────────────────────
     palette: {
       mode,
-      primary: palette.primary,
-      secondary: palette.secondary,
-      success: palette.success,
-      warning: palette.warning,
-      error: palette.error,
-      background:
-        mode === 'dark'
-          ? { default: '#0F172A', paper: '#1E293B' }
-          : { default: '#F8FAFC', paper: '#FFFFFF' },
-      text:
-        mode === 'dark'
-          ? { primary: '#F1F5F9', secondary: '#94A3B8' }
-          : { primary: '#0F172A', secondary: '#64748B' },
-      divider: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      primary: {
+        main:         brand.orange,
+        light:        brand.orangeLight,
+        dark:         brand.orangeDark,
+        contrastText: neutral.white,
+      },
+      secondary: {
+        main:         semantic.info,
+        light:        '#60A5FA',
+        dark:         semantic.infoDark,
+        contrastText: neutral.white,
+      },
+      success: {
+        main:         semantic.success,
+        dark:         semantic.successDark,
+        contrastText: neutral.white,
+      },
+      warning: {
+        main:         semantic.warning,
+        dark:         semantic.warningDark,
+        contrastText: neutral.white,
+      },
+      error: {
+        main:         semantic.error,
+        dark:         semantic.errorDark,
+        contrastText: neutral.white,
+      },
+      background: isLight
+        ? { default: neutral[50], paper: neutral.white }
+        : { default: dark.background, paper: dark.paper },
+      text: isLight
+        ? { primary: neutral[800], secondary: neutral[500] }
+        : { primary: dark.textPrimary, secondary: dark.textSecondary },
+      divider: isLight ? 'rgba(0,0,0,0.06)' : dark.border,
     },
 
+    // ── Typography ────────────────────────────────────────────────────────────
     typography: {
-      fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
-      h1: { fontWeight: 700, fontSize: '2rem', letterSpacing: '-0.02em' },
-      h2: { fontWeight: 700, fontSize: '1.5rem', letterSpacing: '-0.01em' },
-      h3: { fontWeight: 600, fontSize: '1.25rem' },
-      h4: { fontWeight: 600, fontSize: '1.125rem' },
-      h5: { fontWeight: 600, fontSize: '1rem' },
-      h6: { fontWeight: 600, fontSize: '0.875rem' },
-      body1: { fontSize: '0.9375rem', lineHeight: 1.6 },
-      body2: { fontSize: '0.875rem', lineHeight: 1.5 },
-      caption: { fontSize: '0.75rem' },
+      fontFamily,
+      ...typeScale,
     },
 
-    shape: { borderRadius: 10 },
+    // ── Shape ─────────────────────────────────────────────────────────────────
+    shape: { borderRadius: radius.card },
 
+    // ── Transitions ───────────────────────────────────────────────────────────
+    transitions: {
+      duration:  { shortest: durations.fast, short: durations.fast, standard: durations.normal, complex: durations.slow, enteringScreen: durations.normal, leavingScreen: durations.fast },
+      easing:    { easeInOut: easings.standard, easeOut: easings.decelerate, easeIn: easings.accelerate, sharp: easings.sharp },
+    },
+
+    // ── Component overrides ───────────────────────────────────────────────────
     components: {
+      // Button
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
-          root: { textTransform: 'none', fontWeight: 600, borderRadius: 8 },
+          root: {
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: radius.button,
+            transition: `all ${durations.normal}ms ${easings.standard}`,
+          },
+          contained: {
+            '&.MuiButton-containedPrimary': {
+              boxShadow: appShadows.buttonPrimary,
+              '&:hover': {
+                boxShadow: appShadows.cardHover,
+                transform: 'translateY(-1px)',
+              },
+            },
+          },
+          outlined: {
+            '&.MuiButton-outlinedPrimary': {
+              borderColor: brand.orange,
+              '&:hover': {
+                backgroundColor: brand.orangeSubtle,
+              },
+            },
+          },
         },
       },
+
+      // Card
       MuiCard: {
         defaultProps: { elevation: 0 },
         styleOverrides: {
-          root: ({ theme }) => ({
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 12,
-          }),
+          root: {
+            borderRadius: radius.card,
+            boxShadow: appShadows.card,
+            border: 'none',
+            transition: `box-shadow ${durations.normal}ms ${easings.standard}, transform ${durations.normal}ms ${easings.standard}`,
+          },
         },
       },
-      MuiChip: {
-        styleOverrides: { root: { fontWeight: 600 } },
+
+      // Paper
+      MuiPaper: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+          rounded: {
+            borderRadius: radius.card,
+          },
+        },
       },
+
+      // TextField / Input
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            borderRadius: radius.input,
+            transition: `box-shadow ${durations.fast}ms ${easings.standard}`,
+            '&.Mui-focused': {
+              boxShadow: appShadows.inputFocus,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: brand.orange,
+                borderWidth: '1.5px',
+              },
+            },
+          },
+          notchedOutline: {
+            borderColor: isLight ? neutral[200] : dark.border,
+          },
+        },
+      },
+
+      // Chip
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            fontWeight: 600,
+            borderRadius: radius.chip,
+          },
+        },
+      },
+
+      // ListItemButton (sidebar nav pills)
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: radius.navPill,
+            transition: `all ${durations.fast}ms ${easings.standard}`,
+          },
+        },
+      },
+
+      // Divider
+      MuiDivider: {
+        styleOverrides: {
+          root: {
+            borderColor: isLight ? neutral[100] : dark.border,
+          },
+        },
+      },
+
+      // Table
       MuiTableCell: {
         styleOverrides: {
           head: ({ theme }) => ({
-            fontWeight: 600,
-            fontSize: '0.75rem',
+            fontWeight: 700,
+            fontSize: '0.6875rem',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.08em',
             color: theme.palette.text.secondary,
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundColor: isLight ? neutral[50] : dark.elevated,
+            borderBottom: `1px solid ${isLight ? neutral[100] : dark.border}`,
           }),
+          body: {
+            fontSize: '0.875rem',
+            borderBottom: `1px solid ${isLight ? neutral[100] : dark.border}`,
+          },
         },
       },
+
+      // LinearProgress
       MuiLinearProgress: {
-        styleOverrides: { root: { borderRadius: 4, height: 6 } },
-      },
-      MuiListItemButton: {
         styleOverrides: {
-          root: { borderRadius: 8, margin: '2px 8px' },
+          root: { borderRadius: radius.full, height: 6 },
         },
       },
+
+      // Tooltip
       MuiTooltip: {
-        defaultProps: { arrow: true, placement: 'right' },
+        defaultProps: { arrow: true },
+        styleOverrides: {
+          tooltip: {
+            borderRadius: radius.tooltip,
+            fontSize: '0.75rem',
+            fontWeight: 500,
+          },
+        },
+      },
+
+      // Dialog
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            borderRadius: radius.card,
+            boxShadow: appShadows.floating,
+          },
+        },
+      },
+
+      // AppBar
+      MuiAppBar: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: {
+            boxShadow: appShadows.topbar,
+          },
+        },
       },
     },
   });
+};

@@ -1,5 +1,6 @@
 // src/components/common/LoadingOverlay.tsx
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { brand } from '@/theme/colors';
 
 interface LoadingOverlayProps {
   message?: string;
@@ -13,13 +14,18 @@ export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) 
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 6,
+        p: 8,
         height: '100%',
         minHeight: 200,
+        gap: 2,
       }}
     >
-      <CircularProgress size={40} thickness={4} />
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontWeight: 500 }}>
+      <CircularProgress
+        size={36}
+        thickness={4}
+        sx={{ color: brand.orange }}
+      />
+      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
         {message}
       </Typography>
     </Box>

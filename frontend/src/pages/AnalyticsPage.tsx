@@ -2,16 +2,16 @@
 import { useState } from 'react';
 import { Box, Button, Grid, Stack, CircularProgress } from '@mui/material';
 import {
-  Analytics,
-  AutoAwesome,
-  Refresh,
-  Assessment,
+  BarChart3,
+  Sparkles,
+  RefreshCw,
+  BarChart,
   TrendingUp,
-  PriceChange,
-  ShowChart,
-  Inventory2,
-  Psychology,
-} from '@mui/icons-material';
+  CircleDollarSign,
+  LineChart,
+  Package,
+  BrainCircuit,
+} from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { AnswerCard } from '@/components/analytics/AnswerCard';
@@ -24,31 +24,12 @@ import {
   useRisksAndOpportunities,
   useRefreshAnalytics,
 } from '@/hooks/useAnalytics';
+import { radius } from '@/theme/radius';
 
-/**
- * AnalyticsPage — Phase 3 implementation.
- *
- * Workflow:
- *   1. Page loads instantly with an EmptyState + "Generate Insights" CTA.
- *   2. On click, `enabled` flips to true, firing all 6 RAG queries in parallel.
- *   3. Each section card transitions from skeleton → answer independently.
- *   4. "Refresh Insights" invalidates all cached analytics queries and re-fetches.
- *   5. On return visits within staleTime (5 min), cached data is shown without
- *      re-fetching — the Generate button is not shown again until cache expires.
- *
- * Design decisions:
- *   - No auto-fire on page load (avoids unnecessary LLM invocations).
- *   - No answer parsing — backend text is displayed verbatim.
- *   - No charts — information cards only; charts deferred to a future phase.
- *   - Section layout is inline (no separate section component files) per the
- *     "no unnecessary abstractions" requirement.
- */
 export function AnalyticsPage() {
-  // When false, all queries are disabled. Flips to true on Generate or Refresh.
   const [enabled, setEnabled] = useState(false);
   const refreshAnalytics = useRefreshAnalytics();
 
-  // ── Query hooks — all disabled until user triggers generation ───────────────
   const kpi             = useKpiSummary(enabled);
   const revenue         = useRevenueTrend(enabled);
   const cost            = useCostAnalysis(enabled);
@@ -58,23 +39,14 @@ export function AnalyticsPage() {
 
   const allQueries = [kpi, revenue, cost, forecastRevenue, forecastInv, risks];
   const isAnyLoading = allQueries.some((q) => q.isLoading);
-
-  // Cache data appears even when enabled=false (TanStack Query reads from cache
-  // regardless of the enabled flag). So `hasAnyData` is true on return visits.
   const hasAnyData = allQueries.some((q) => q.data !== undefined);
   const showSections = enabled || hasAnyData;
 
-  // ── Event handlers ──────────────────────────────────────────────────────────
-
   const handleGenerate = () => setEnabled(true);
-
   const handleRefresh = () => {
-    // Ensure queries are enabled before invalidating, so the re-fetch actually fires.
     setEnabled(true);
     refreshAnalytics();
   };
-
-  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <Box>
@@ -86,10 +58,11 @@ export function AnalyticsPage() {
             <Button
               variant="outlined"
               startIcon={
-                isAnyLoading ? <CircularProgress size={16} color="inherit" /> : <Refresh />
+                isAnyLoading ? <CircularProgress size={14} color="inherit" /> : <RefreshCw size={16} />
               }
               onClick={handleRefresh}
               disabled={isAnyLoading}
+              sx={{ borderRadius: `${radius.button}px`, px: 2, py: 1, fontWeight: 700 }}
             >
               Refresh Insights
             </Button>
@@ -97,35 +70,32 @@ export function AnalyticsPage() {
         }
       />
 
-      {/* ── Empty / Generate state ─────────────────────────────────────────── */}
       {!showSections && (
-        <EmptyState
-          icon={<Analytics />}
-          title="No Insights Generated"
-          description="Click Generate Insights to run the analytics, forecasting, and reasoning engines against your indexed business data."
-          action={
-            <Stack direction="row" sx={{ justifyContent: 'center', mt: 1 }}>
+        <Box sx={{ mt: 4 }}>
+          <EmptyState
+            icon={<BarChart3 size={32} />}
+            title="No Insights Generated"
+            description="Click Generate Insights to run the analytics, forecasting, and reasoning engines against your indexed business data."
+            action={
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<AutoAwesome />}
+                startIcon={<Sparkles size={18} />}
                 onClick={handleGenerate}
+                sx={{ mt: 2, px: 4, py: 1.5, borderRadius: `${radius.button}px`, fontWeight: 700 }}
               >
                 Generate Insights
               </Button>
-            </Stack>
-          }
-        />
+            }
+          />
+        </Box>
       )}
 
-      {/* ── Sections (rendered once generation has been triggered) ──────────── */}
       {showSections && (
         <Stack spacing={4}>
-
-          {/* ── KPI Summary — full width ─────────────────────────────────── */}
           <AnswerCard
             title="KPI Summary"
-            icon={<Assessment />}
+            icon={<BarChart size={20} />}
             data={kpi.data}
             isLoading={kpi.isLoading}
             isError={kpi.isError}
@@ -133,12 +103,11 @@ export function AnalyticsPage() {
             accentColor="primary"
           />
 
-          {/* ── Revenue Trend + Cost Analysis — side by side ─────────────── */}
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, lg: 6 }}>
               <AnswerCard
                 title="Revenue Trend"
-                icon={<TrendingUp />}
+                icon={<TrendingUp size={20} />}
                 data={revenue.data}
                 isLoading={revenue.isLoading}
                 isError={revenue.isError}
@@ -149,7 +118,7 @@ export function AnalyticsPage() {
             <Grid size={{ xs: 12, lg: 6 }}>
               <AnswerCard
                 title="Cost Analysis"
-                icon={<PriceChange />}
+                icon={<CircleDollarSign size={20} />}
                 data={cost.data}
                 isLoading={cost.isLoading}
                 isError={cost.isError}
@@ -159,12 +128,11 @@ export function AnalyticsPage() {
             </Grid>
           </Grid>
 
-          {/* ── Revenue Forecast + Inventory Forecast — side by side ─────── */}
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, lg: 6 }}>
               <AnswerCard
                 title="Revenue Forecast"
-                icon={<ShowChart />}
+                icon={<LineChart size={20} />}
                 data={forecastRevenue.data}
                 isLoading={forecastRevenue.isLoading}
                 isError={forecastRevenue.isError}
@@ -175,7 +143,7 @@ export function AnalyticsPage() {
             <Grid size={{ xs: 12, lg: 6 }}>
               <AnswerCard
                 title="Inventory Forecast"
-                icon={<Inventory2 />}
+                icon={<Package size={20} />}
                 data={forecastInv.data}
                 isLoading={forecastInv.isLoading}
                 isError={forecastInv.isError}
@@ -185,20 +153,17 @@ export function AnalyticsPage() {
             </Grid>
           </Grid>
 
-          {/* ── Risks & Opportunities — full width ───────────────────────── */}
           <AnswerCard
             title="Risks & Opportunities"
-            icon={<Psychology />}
+            icon={<BrainCircuit size={20} />}
             data={risks.data}
             isLoading={risks.isLoading}
             isError={risks.isError}
             onRetry={risks.refetch}
             accentColor="error"
           />
-
         </Stack>
       )}
     </Box>
   );
 }
-

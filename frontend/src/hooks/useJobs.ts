@@ -7,13 +7,7 @@ export function useJobs() {
   return useQuery({
     queryKey: ['jobs', 'list'],
     queryFn: jobsApi.listJobs,
-    refetchInterval: (query) => {
-      // Poll every 5s if any job is active
-      const hasActive = query.state.data?.jobs?.some(
-        (j) => ['queued', 'validating', 'saving_files', 'indexing'].includes(j.status)
-      );
-      return hasActive ? 5000 : false;
-    },
+    refetchInterval: 5000, // Poll every 5s
   });
 }
 
