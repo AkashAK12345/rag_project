@@ -18,10 +18,11 @@ ForecastContext    — aggregate output consumed by RagService
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from schemas.query_context import BusinessObservation
+    from schemas.dashboard import ChartSeries
 
 
 # ---------------------------------------------------------------------------
@@ -150,6 +151,7 @@ class ForecastResult:
     methodology: str
     observations_used: int
     historical_period: str
+    timeline: Optional['ChartSeries'] = None
 
 
 @dataclass

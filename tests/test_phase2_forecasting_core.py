@@ -96,9 +96,16 @@ def clean_registry():
     This prevents registration side effects from one test contaminating
     another, regardless of test execution order.
     """
+    # Save the original registry state
+    original_registry = ForecastStrategyRegistry._registry.copy()
     ForecastStrategyRegistry.clear()
-    yield
-    ForecastStrategyRegistry.clear()
+    
+    try:
+        yield
+    finally:
+        # Restore the original registry state
+        ForecastStrategyRegistry._registry.clear()
+        ForecastStrategyRegistry._registry.update(original_registry)
 
 
 # ===========================================================================

@@ -52,8 +52,9 @@ class IngestionService:
         if not result.dataframes:
             raise ValueError(f"Dataset '{result.dataset_name}' contains no readable data.")
 
-        # 1. Detect Report Type
+        # 1. Detect Report Type and Build Capability Graph
         parser_cls = ReportFactory.get_parser_class(result.dataframes)
+        capability_graph = ReportFactory.evaluate_workbook(result.dataframes, result.dataset_name)
 
         # 2. Instantiate and Validate
         parser = parser_cls(
@@ -73,6 +74,7 @@ class IngestionService:
         
         # Inject enterprise metadata if present
         report_result.organization_id = result.organization_id
+        report_result.capability_graph = capability_graph
         
         logger.info(
             f"IngestionService: parsing complete. "
@@ -80,6 +82,15 @@ class IngestionService:
             f"Domain: {report_result.business_domain.value}, "
             f"Docs: {doc_count}"
         )
+        # [DIAG] Log the first 3 documents so we can verify key_values will be extractable
+        for i, doc in enumerate(report_result.documents[:3]):
+            snippet = doc.text[:200].replace("\n", " | ")
+            logger.debug(
+                f"[DIAG] IngestionService sample doc[{i}] "
+                f"domain={doc.metadata.get('business_domain')} "
+                f"report_type={doc.metadata.get('report_type')} "
+                f"text='{snippet}'"
+            )
 
         # 4. Push to IndexingService
         if doc_count > 0:

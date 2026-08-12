@@ -2,30 +2,27 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["item", "quantity", "unit price", "total", "supplier", "date"]
-_SHEET_KEYWORDS = ["purchase", "purchases", "procurement", "vendor", "po"]
-
-
 class PurchaseReport(BaseReport):
-    """Parses purchase / procurement reports from suppliers."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.3 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    """Parses purchase orders and incoming procurement."""
+    
+    BUSINESS_DOMAIN = BusinessDomain.PURCHASES
+    REPORT_NAMES = ["Purchase Report", "Procurement Log", "Vendor Orders"]
+    KEYWORDS = ["purchase", "purchases", "procurement", "vendor", "po"]
+    
+    REQUIRED_FIELDS = ["supplier", "purchase_value"]
+    OPTIONAL_FIELDS = ["product", "quantity", "unit_price", "purchase_date"]
+    
+    COVERAGE = {
+        "metrics": ["purchase_cost", "total_orders", "top_supplier"],
+        "charts": ["purchase_trend", "supplier_ranking"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():
             norm = self._normalise_columns(df)
-            if any(c in norm.columns for c in ["item", "supplier", "total"]):
+            if any(c in norm.columns for c in ["product", "supplier", "purchase_value"]):
                 return
-        raise ValueError("Purchase report must contain item, supplier, and total columns.")
+        raise ValueError("Purchase report must contain product, supplier, and purchase_value columns.")
 
     def parse(self) -> ReportResult:
         documents = []
@@ -33,24 +30,29 @@ class PurchaseReport(BaseReport):
             norm = self._normalise_columns(df)
             for _, row in norm.iterrows():
                 parts = []
-                if pd.notna(row.get("date")):
-                    parts.append(f"Purchase Date: {row['date']}")
+                if pd.notna(row.get("purchase_date")):
+                    parts.append(f"Purchase Date: {row['purchase_date']}")
                 if pd.notna(row.get("supplier")):
                     parts.append(f"Supplier: {row['supplier']}")
-                if pd.notna(row.get("item")):
-                    parts.append(f"Item: {row['item']}")
+                if pd.notna(row.get("product")):
+                    parts.append(f"Item: {row['product']}")
                 if pd.notna(row.get("quantity")):
                     parts.append(f"Quantity: {row['quantity']}")
-                if pd.notna(row.get("unit price")):
-                    parts.append(f"Unit Price: {row['unit price']}")
-                if pd.notna(row.get("total")):
-                    parts.append(f"Total Cost: {row['total']}")
+                if pd.notna(row.get("unit_price")):
+                    parts.append(f"Unit Price: {row['unit_price']}")
+                if pd.notna(row.get("purchase_value")):
+                    parts.append(f"Total Cost: {row['purchase_value']}")
                 # Include any remaining columns
-                known = {"date", "supplier", "item", "quantity", "unit price", "total"}
+                known = {"purchase_date", "supplier", "product", "quantity", "unit_price", "purchase_value"}
                 for col, val in row.items():
                     if col not in known and pd.notna(val):
                         parts.append(f"{col.title()}: {val}")
                 if parts:
+                    # Capture canonical fields for metadata
+                    canonical_dict = {
+                        str(col): str(val) for col, val in row.items() if pd.notna(val)
+                    }
+                    import json
                     documents.append(self._make_document(
                         text="\n".join(parts),
                         report_type=ReportType.PURCHASES,
@@ -58,6 +60,7 @@ class PurchaseReport(BaseReport):
                         source_file=self.source_file,
                         source_type=self.source_type,
                         sheet=sheet_name,
+                        extra={"key_values_json": json.dumps(canonical_dict)}
                     ))
         return ReportResult(
             report_type=ReportType.PURCHASES,

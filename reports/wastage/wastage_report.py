@@ -2,23 +2,20 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["item", "quantity", "reason", "date", "cost", "loss"]
-_SHEET_KEYWORDS = ["wastage", "spoilage", "loss", "damage", "discard"]
-
-
 class WastageReport(BaseReport):
     """Parses inventory wastage, spoilage, and loss reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.4 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    
+    BUSINESS_DOMAIN = BusinessDomain.WASTAGE
+    REPORT_NAMES = ["Wastage Report", "Spoilage Log", "Loss Report"]
+    KEYWORDS = ["wastage", "spoilage", "loss", "damage", "discard"]
+    
+    REQUIRED_FIELDS = ["product", "quantity", "reason"]
+    OPTIONAL_FIELDS = ["transaction_date", "cost", "loss"]
+    
+    COVERAGE = {
+        "metrics": ["total_wastage", "financial_loss"],
+        "charts": ["wastage_trend"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():

@@ -40,6 +40,40 @@ async def get_job(job_id: str, job_manager: JobManager = Depends(get_job_manager
     return job
 
 
+@router.get(
+    "/{job_id}/summary",
+    status_code=status.HTTP_200_OK,
+    summary="Get upload capabilities summary for a completed job",
+    dependencies=[Depends(require_roles(Role.ADMIN, Role.MANAGER))],
+)
+async def get_job_summary(job_id: str, job_manager: JobManager = Depends(get_job_manager)):
+    job = job_manager.get(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job '{job_id}' not found.",
+        )
+        
+    from services.capability_service import CapabilityService
+    service = CapabilityService()
+    
+    # Check for all processed files in this job
+    summaries = []
+    if job.uploaded_files:
+        for f in job.uploaded_files:
+            try:
+                summary = service.generate_upload_summary(job_id + "_" + f)
+                if summary and "error" not in summary:
+                    summaries.append(summary)
+            except Exception:
+                pass
+                
+    if not summaries:
+        raise HTTPException(status_code=404, detail="No capability summary found for this job.")
+        
+    return {"job_id": job_id, "summaries": summaries}
+
+
 @router.delete(
     "/{job_id}",
     status_code=status.HTTP_204_NO_CONTENT,

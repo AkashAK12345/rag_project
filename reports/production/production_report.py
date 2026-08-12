@@ -2,23 +2,20 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["recipe", "item", "yield", "cost", "date", "produced"]
-_SHEET_KEYWORDS = ["production", "recipe", "yield", "manufacturing"]
-
-
 class ProductionReport(BaseReport):
-    """Parses kitchen production and recipe yield reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.35 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    """Parses production line output logs."""
+    
+    BUSINESS_DOMAIN = BusinessDomain.PRODUCTION
+    REPORT_NAMES = ["Production Report", "Manufacturing Log", "Line Output"]
+    KEYWORDS = ["production", "manufacturing", "output", "line"]
+    
+    REQUIRED_FIELDS = ["product", "quantity"]
+    OPTIONAL_FIELDS = ["production_date", "machine", "shift"]
+    
+    COVERAGE = {
+        "metrics": ["total_output", "defect_rate"],
+        "charts": ["production_trend"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():

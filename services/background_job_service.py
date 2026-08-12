@@ -141,6 +141,10 @@ class BackgroundJobService:
                     result = ingestion_service.process_file(file_path, progress_callback=update_progress)
                     indexed_documents += result.document_count
                     processed_files.append(filename)
+                    
+                    if result.capability_graph:
+                        from services.capability_service import CapabilityService
+                        CapabilityService().repository.save(job_id + "_" + filename, result.capability_graph)
                 except Exception as e:
                     logger.warning(f"Job {job_id}: file '{filename}' failed ingestion: {e}")
                     skipped_files.append(filename)
@@ -258,6 +262,10 @@ class BackgroundJobService:
             # 2. Ingest Dataframes via IngestionService
             ingestion_service = IngestionService()
             report_result = ingestion_service.process_connector_result(result, progress_callback=update_sync_progress)
+            
+            if report_result and report_result.capability_graph:
+                from services.capability_service import CapabilityService
+                CapabilityService().repository.save(job_id + "_" + connector.id, report_result.capability_graph)
             
             # Update DB Connector state
             connector.last_sync_time = datetime.now(timezone.utc)

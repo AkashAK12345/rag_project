@@ -35,7 +35,8 @@ class RevenueCalculator(BaseCalculator):
                 pass
 
         prov_list = list(provenance)
-        req_lower = [m.lower() for m in required_metrics]
+        # Normalize required_metrics: convert snake_case to space-separated for matching
+        req_lower = [m.lower().replace("_", " ") for m in required_metrics]
 
         if "average monthly revenue" in req_lower or not required_metrics:
             if months:
@@ -48,11 +49,11 @@ class RevenueCalculator(BaseCalculator):
                     calculated_from=prov_list
                 ))
             
-        if "revenue growth" in req_lower or not required_metrics:
+        if "revenue growth pct" in req_lower or "revenue growth" in req_lower or not required_metrics:
             # Simplistic growth placeholder
             # In reality, needs temporal ordering
             metrics.append(BusinessMetric(
-                metric_name="Revenue Growth",
+                metric_name="Revenue Growth Pct",
                 metric_category=MetricCategory.RATIO,
                 metric_value=0.0,
                 unit="%",
@@ -61,5 +62,19 @@ class RevenueCalculator(BaseCalculator):
             ))
 
         return metrics
+
+    def calculate_charts(self, observations: List[BusinessObservation], required_metrics: List[str]) -> List[any]:
+        from schemas.dashboard import ChartSeries, RevenueTrendPoint
+        charts = []
+        
+        # In a real scenario, this would aggregate `obs.key_values.get('date')` and `obs.key_values.get('revenue')`
+        # For now, return empty data since we rely on actual observation data.
+        trend_data = []
+        
+        if "revenue_trend" in required_metrics or not required_metrics:
+            charts.append(ChartSeries(series_name="revenue_trend", data=trend_data))
+            
+        return charts
+
 
 MetricRegistry.register(BusinessDomain.SALES, RevenueCalculator)

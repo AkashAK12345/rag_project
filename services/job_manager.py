@@ -16,6 +16,10 @@ class JobManager:
     worker thread (running IndexingService) can never corrupt shared state.
     This is the ONLY place jobs are mutated — BackgroundJobService delegates
     all state transitions here.
+
+    JobManager is an in-memory registry. Jobs are lost upon server restart, 
+    the frontend must handle lost job states gracefully, and completed 
+    job history does not persist across restarts.
     """
 
     def __init__(self) -> None:

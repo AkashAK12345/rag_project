@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 from schemas.business_metric import BusinessMetric, MetricCategory
 
+from schemas.dashboard import ChartSeries
 
 @dataclass
 class AnalyticsContext:
@@ -16,6 +17,7 @@ class AnalyticsContext:
     The LLM uses this to explain the math rather than computing it.
     """
     metrics: List[BusinessMetric] = field(default_factory=list)
+    charts: List[ChartSeries] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     
     # Categorized metrics for easier prompt assembly and API responses

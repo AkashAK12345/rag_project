@@ -2,23 +2,20 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["item", "on hand", "reorder level", "value"]
-_SHEET_KEYWORDS = ["stock", "balance", "on hand", "inventory status"]
-
-
 class StockReport(BaseReport):
     """Parses current stock level / balance reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.35 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    
+    BUSINESS_DOMAIN = BusinessDomain.INVENTORY
+    REPORT_NAMES = ["Stock Report", "Stock Balance", "Inventory Status"]
+    KEYWORDS = ["stock", "balance", "on hand", "inventory status"]
+    
+    REQUIRED_FIELDS = ["product", "quantity"]
+    OPTIONAL_FIELDS = ["reorder level", "value", "location"]
+    
+    COVERAGE = {
+        "metrics": ["total_stock_value", "reorder_count"],
+        "charts": ["stock_distribution"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():

@@ -21,7 +21,7 @@ def rag_service():
                 from llama_index.core import Settings
                 Settings.llm = MagicMock()
                 rs = RagService()
-                return rs
+                yield rs
 
 @pytest.fixture
 def query_service(rag_service):
@@ -38,40 +38,41 @@ def make_obs():
     )
 
 def test_empty_forecast_context_omits_prompt_block(rag_service):
-    with patch("llama_index.core.llms.mock.MockLLM.complete") as mock_complete:
-        mock_complete.return_value = "Test response"
-        
-        # Empty forecast context
-        fc = ForecastContext()
-        rag_service.generate_response("q", "context", forecast_context=fc)
-        
-        prompt = mock_complete.call_args[0][0]
-        assert "DETERMINISTIC FORECASTING RESULTS" not in prompt
+    from llama_index.core import Settings
+    Settings.llm.complete.return_value = "Test response"
+    
+    # Empty forecast context
+    fc = ForecastContext()
+    rag_service.generate_response("q", "context", forecast_context=fc)
+    
+    prompt = Settings.llm.complete.call_args[0][0]
+    assert "DETERMINISTIC FORECASTING RESULTS" not in prompt
 
 def test_populated_forecast_context_includes_prompt_block(rag_service):
-    with patch("llama_index.core.llms.mock.MockLLM.complete") as mock_complete:
-        mock_complete.return_value = "Test response"
-        
-        result = ForecastResult(
-            metric=ForecastMetric.SALES,
-            forecast_period="Next Month",
-            predicted_value=150.0,
-            confidence=0.9,
-            lower_bound=100.0,
-            upper_bound=200.0,
-            algorithm=ForecastAlgorithm.EXPONENTIAL_SMOOTHING,
-            methodology="Test Method",
-            observations_used=10,
-            historical_period="Last 10",
-        )
-        fc = ForecastContext(results=[result])
-        rag_service.generate_response("q", "context", forecast_context=fc)
-        
-        prompt = mock_complete.call_args[0][0]
-        assert "DETERMINISTIC FORECASTING RESULTS" in prompt
-        assert "Sales Forecast" in prompt
-        assert "150.00" in prompt
-        assert "90.0%" in prompt
+    from llama_index.core import Settings
+    Settings.llm.complete.return_value = "Test response"
+    
+    result = ForecastResult(
+        metric=ForecastMetric.SALES,
+        forecast_period="Next Month",
+        predicted_value=150.0,
+        confidence=0.9,
+        lower_bound=100.0,
+        upper_bound=200.0,
+        algorithm=ForecastAlgorithm.EXPONENTIAL_SMOOTHING,
+        methodology="Test Method",
+        observations_used=10,
+        historical_period="Last 10",
+        timeline=None,
+    )
+    fc = ForecastContext(results=[result])
+    rag_service.generate_response("q", "context", forecast_context=fc)
+    
+    prompt = Settings.llm.complete.call_args[0][0]
+    assert "DETERMINISTIC FORECASTING RESULTS" in prompt
+    assert "Sales Forecast" in prompt
+    assert "150.00" in prompt
+    assert "90.0%" in prompt
 
 def test_query_service_analytics_only(query_service):
     plan = RetrievalPlan(QueryType.SUMMARIZE, QueryIntent.SUMMARIZE_REPORT, [BusinessDomain.SALES])
@@ -83,7 +84,15 @@ def test_query_service_analytics_only(query_service):
     query_service._forecasting_service = MagicMock(compute=MagicMock())
     query_service._rag_service = MagicMock(generate_response=MagicMock())
 
-    query_service.answer("test query")
+    from schemas.report import CapabilityContext
+    with patch("services.capability_service.CapabilityService.get_capability_context") as mock_cap:
+        mock_cap.return_value = CapabilityContext(
+            supported_domains=["sales"],
+            unsupported_domains=[],
+            supported_metrics=[],
+            supported_charts=[]
+        )
+        query_service.answer("test query")
     
     query_service._analytics_service.compute.assert_called_once()
     query_service._forecasting_service.compute.assert_not_called()
@@ -107,7 +116,15 @@ def test_query_service_analytics_and_forecasting(query_service):
     query_service._forecasting_service = MagicMock(compute=MagicMock(return_value=MagicMock()))
     query_service._rag_service = MagicMock(generate_response=MagicMock())
 
-    query_service.answer("test query")
+    from schemas.report import CapabilityContext
+    with patch("services.capability_service.CapabilityService.get_capability_context") as mock_cap:
+        mock_cap.return_value = CapabilityContext(
+            supported_domains=["sales"],
+            unsupported_domains=[],
+            supported_metrics=[],
+            supported_charts=[]
+        )
+        query_service.answer("test query")
     
     query_service._analytics_service.compute.assert_called_once()
     query_service._forecasting_service.compute.assert_called_once()

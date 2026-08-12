@@ -88,6 +88,24 @@ class QueryService:
             f"({(t1 - t0) * 1000:.1f}ms)"
         )
 
+        # Step 1.5: Validate capabilities
+        from services.capability_service import CapabilityService
+        cap_service = CapabilityService()
+        cap_context = cap_service.get_capability_context()
+        
+        # Check if the required domains are supported
+        unsupported_req_domains = [d.value for d in plan.domains if d.value in cap_context.unsupported_domains]
+        if unsupported_req_domains:
+            reason = f"This workbook does not contain {unsupported_req_domains[0]} information required to answer your question."
+            logger.warning(f"QueryService [capability]: Short-circuiting due to unsupported domains: {unsupported_req_domains}")
+            class _DeterministicResponse:
+                def __init__(self, text: str):
+                    self.response = text
+                    self.source_nodes = []
+                def __str__(self):
+                    return self.response
+            return _DeterministicResponse(reason)
+
         # Step 2: Retrieve relevant documents
         nodes = self._retrieval_service.retrieve(question, plan)
         t2 = time.perf_counter()
@@ -139,12 +157,13 @@ class QueryService:
                 f"({(tf - ta) * 1000:.1f}ms)"
             )
 
-        # Step 6: Generate LLM response with reasoning, analytics, and forecast context
+        # Step 6: Generate LLM response with reasoning, analytics, forecast, and capability context
         response = self._rag_service.generate_response(
             question=question,
             reasoning_context=reasoning_context,
             analytics_context=analytics_context,
             forecast_context=forecast_context,
+            capability_context=cap_context,
         )
         t5 = time.perf_counter()
         logger.info(

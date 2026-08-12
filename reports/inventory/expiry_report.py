@@ -2,23 +2,20 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["item", "expiry date", "batch", "quantity"]
-_SHEET_KEYWORDS = ["expiry", "expiration", "perishable"]
-
-
 class ExpiryReport(BaseReport):
     """Parses inventory expiry reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.35 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    
+    BUSINESS_DOMAIN = BusinessDomain.INVENTORY
+    REPORT_NAMES = ["Expiry Report", "Expiration Log", "Perishable Inventory"]
+    KEYWORDS = ["expiry", "expiration", "perishable"]
+    
+    REQUIRED_FIELDS = ["product", "quantity"]
+    OPTIONAL_FIELDS = ["expiry date", "expiration date", "batch"]
+    
+    COVERAGE = {
+        "metrics": ["expired_stock", "expiring_soon_count"],
+        "charts": ["expiry_trend"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():

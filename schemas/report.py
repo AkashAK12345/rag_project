@@ -84,7 +84,69 @@ class ReportResult:
     imported_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     version: str = "1.0"
     extra_metadata: dict[str, Any] = field(default_factory=dict)
+    capability_graph: WorkbookCapabilityGraph | None = None
 
     @property
     def document_count(self) -> int:
         return len(self.documents)
+
+
+@dataclass
+class DetectionDiagnostic:
+    parser_name: str
+    matched_required: list[str]
+    missing_required: list[str]
+    matched_optional: list[str]
+    missing_optional: list[str]
+    sheet_matched: bool
+    score: float
+    accepted: bool
+
+
+@dataclass
+class MetricCapability:
+    name: str
+    business_domain: BusinessDomain
+    source_sheet: str
+    source_parser: str
+    required_fields: list[str]
+    optional_fields: list[str]
+    confidence: float
+
+
+@dataclass
+class ChartCapability:
+    name: str
+    business_domain: BusinessDomain
+    source_sheet: str
+    source_parser: str
+    required_fields: list[str]
+    optional_fields: list[str]
+    confidence: float
+
+
+@dataclass
+class SheetCapability:
+    sheet_name: str
+    accepted_parsers: list[str]
+    candidate_rankings: list[DetectionDiagnostic]
+    supported_metrics: list[MetricCapability]
+    supported_charts: list[ChartCapability]
+    supported_domains: list[BusinessDomain]
+
+
+@dataclass
+class WorkbookCapabilityGraph:
+    workbook_name: str
+    sheets: list[SheetCapability]
+    supported_metrics: list[MetricCapability]
+    supported_charts: list[ChartCapability]
+    supported_domains: set[BusinessDomain]
+
+
+@dataclass
+class CapabilityContext:
+    supported_domains: list[str]
+    supported_metrics: list[str]
+    supported_charts: list[str]
+    unsupported_domains: list[str]

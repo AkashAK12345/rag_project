@@ -203,13 +203,13 @@ class TestForecastResult:
         assert r.observations_used == 12
         assert r.historical_period == "Last 12 observations"
 
-    def test_all_ten_fields_required(self):
+    def test_all_eleven_fields_required(self):
         """All ForecastResult fields must be explicitly provided — no silent defaults."""
         field_names = {f.name for f in dc_fields(ForecastResult)}
         expected = {
             "metric", "forecast_period", "predicted_value", "confidence",
             "lower_bound", "upper_bound", "algorithm", "methodology",
-            "observations_used", "historical_period",
+            "observations_used", "historical_period", "timeline",
         }
         assert expected == field_names, (
             f"Field mismatch. Extra: {field_names - expected}. Missing: {expected - field_names}"

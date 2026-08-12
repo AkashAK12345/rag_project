@@ -16,6 +16,9 @@ from api.jobs import router as jobs_router
 from api.auth import router as auth_router
 from api.ingestion import router as ingestion_router
 from api.connectors import router as connectors_router
+from api.analytics import router as analytics_router
+from api.forecast import router as forecast_router
+from api.capabilities import router as capabilities_router
 from core.logging import get_logger
 
 load_dotenv()
@@ -95,6 +98,9 @@ app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(system_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(connectors_router, prefix="/api/v1")
+app.include_router(analytics_router, prefix="/api/v1")
+app.include_router(forecast_router, prefix="/api/v1")
+app.include_router(capabilities_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     import uvicorn

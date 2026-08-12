@@ -2,25 +2,20 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["outlet", "revenue", "date", "transactions"]
-_SHEET_KEYWORDS = ["outlet", "branch", "location", "store"]
-
-
 class OutletSalesReport(BaseReport):
     """Parses multi-outlet / branch-level sales performance reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.35 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            # Outlet/branch column is a strong signal
-            outlet_bonus = 0.2 if ("outlet" in norm.columns or "branch" in norm.columns) else 0.0
-            score = cls._columns_present(norm, _REQUIRED_COLS) * 0.7 + outlet_bonus
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score + sheet_bonus)
+    
+    BUSINESS_DOMAIN = BusinessDomain.SALES
+    REPORT_NAMES = ["Outlet Sales", "Branch Performance", "Store Sales"]
+    KEYWORDS = ["outlet", "branch", "location", "store"]
+    
+    REQUIRED_FIELDS = ["branch", "revenue"]
+    OPTIONAL_FIELDS = ["transaction_date", "transactions"]
+    
+    COVERAGE = {
+        "metrics": ["total_revenue", "active_branches"],
+        "charts": ["branch_performance"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():

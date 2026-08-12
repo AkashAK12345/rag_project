@@ -54,6 +54,7 @@ def build_result(
     methodology: str,
     algorithm: ForecastAlgorithm,
     num_observations: int,
+    timeline: any = None,
 ) -> ForecastResult:
     """
     Constructs a fully populated ForecastResult.
@@ -69,4 +70,5 @@ def build_result(
         methodology=methodology,
         observations_used=num_observations,
         historical_period=f"Last {num_observations} observations",
+        timeline=timeline,
     )

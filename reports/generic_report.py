@@ -30,11 +30,18 @@ class GenericReport(BaseReport):
     rows in ERP-style reports where the first few rows are decorative
     titles rather than column headers.
     """
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        # Always scores 0.1 — wins only when all domain parsers score lower.
-        return 0.1
+    
+    BUSINESS_DOMAIN = BusinessDomain.UNKNOWN
+    REPORT_NAMES = ["Generic Report", "Unknown Export"]
+    KEYWORDS = []
+    
+    REQUIRED_FIELDS = []
+    OPTIONAL_FIELDS = []
+    
+    COVERAGE = {
+        "metrics": [],
+        "charts": []
+    }
 
     def validate(self) -> None:
         if not self.df_map:
@@ -51,6 +58,10 @@ class GenericReport(BaseReport):
                     f"{col}: {val}" for col, val in row.items() if pd.notna(val)
                 )
                 if row_text.strip():
+                    import json
+                    canonical_dict = {
+                        str(col): str(val) for col, val in row.items() if pd.notna(val)
+                    }
                     documents.append(
                         self._make_document(
                             text=row_text,
@@ -59,6 +70,7 @@ class GenericReport(BaseReport):
                             source_file=self.source_file,
                             source_type=self.source_type,
                             sheet=sheet_name,
+                            extra={"key_values_json": json.dumps(canonical_dict)}
                         )
                     )
 

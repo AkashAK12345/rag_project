@@ -77,12 +77,13 @@ function WelcomeScreen({ onPrompt }: WelcomeScreenProps) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         px: 3,
-        py: 6,
+        py: { xs: 4, md: 8 },
         overflowY: 'auto',
       }}
     >
+      <Box sx={{ margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: 840 }}>
       {/* Brand icon + heading */}
       <Stack sx={{ alignItems: 'center', mb: 5 }}>
         <Box
@@ -200,6 +201,7 @@ function WelcomeScreen({ onPrompt }: WelcomeScreenProps) {
       <Typography variant="caption" color="text.disabled" sx={{ mt: 4, textAlign: 'center' }}>
         Press <strong>Enter</strong> to send · <strong>Shift+Enter</strong> for a new line
       </Typography>
+      </Box>
     </Box>
   );
 }

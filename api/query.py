@@ -11,20 +11,6 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/query", tags=["Query"])
 
 
-@router.get("/debug")
-def debug_index(rag_service=Depends(get_rag_service)):
-    index = rag_service.index
-    docstore = index.docstore
-    vector_store = index.vector_store
-    return {
-        "docstore_docs": len(docstore.docs),
-        "vector_store_data": len(vector_store._data.embedding_dict) if hasattr(vector_store, '_data') else -1,
-        "index_struct": list(index.index_struct.nodes_dict.values())[:5] if hasattr(index.index_struct, "nodes_dict") else str(index.index_struct),
-        "nodes": list(docstore.docs.keys())[:5],
-        "embed_model": str(index._embed_model)
-    }
-
-
 @router.post(
     "",
     response_model=QueryResponse,

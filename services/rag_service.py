@@ -108,6 +108,7 @@ class RagService:
         reasoning_context=None,
         analytics_context=None,
         forecast_context=None,
+        capability_context=None,
     ):
         """
         Generate an LLM response given a pre-assembled structured context.
@@ -139,6 +140,18 @@ class RagService:
 
         if forecast_context is not None and forecast_context.results:
             prompt_body += "\n\n" + self._format_forecast_block(forecast_context)
+            
+        if capability_context is not None:
+            cap_lines = [
+                "--- CAPABILITY CONTEXT ---",
+                f"Supported Domains: {', '.join(capability_context.supported_domains)}",
+                f"Unsupported Domains: {', '.join(capability_context.unsupported_domains)}",
+                f"Supported Metrics: {', '.join(capability_context.supported_metrics)}",
+                f"Supported Charts: {', '.join(capability_context.supported_charts)}",
+                "If the question asks about unsupported domains, state clearly that the data is not available.",
+                "--------------------------"
+            ]
+            prompt_body += "\n\n" + "\n".join(cap_lines)
 
         # --- Build a grounding block from source context ---
         # This is injected at the TOP of the prompt so the LLM cannot

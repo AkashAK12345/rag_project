@@ -2,30 +2,29 @@ import pandas as pd
 from reports.base_report import BaseReport
 from schemas.report import BusinessDomain, ReportResult, ReportType, SourceType
 
-_REQUIRED_COLS = ["employee", "role", "department", "salary", "status", "join date"]
-_SHEET_KEYWORDS = ["employee", "staff", "roster", "payroll"]
-
-
 class EmployeeReport(BaseReport):
     """Parses employee master / payroll / roster reports."""
-
-    @classmethod
-    def detect(cls, df_map: dict[str, pd.DataFrame]) -> float:
-        sheet_bonus = 0.35 if cls._sheet_contains_keywords(df_map, _SHEET_KEYWORDS) else 0.0
-        best_col_score = 0.0
-        for df in df_map.values():
-            norm = cls._normalise_columns(df)
-            score = cls._columns_present(norm, _REQUIRED_COLS)
-            if score > best_col_score:
-                best_col_score = score
-        return min(1.0, best_col_score * 0.7 + sheet_bonus)
+    
+    BUSINESS_DOMAIN = BusinessDomain.EMPLOYEES
+    REPORT_NAMES = ["Employee Master", "Payroll", "Staff Roster"]
+    KEYWORDS = ["employee", "staff", "roster", "payroll"]
+    
+    REQUIRED_FIELDS = ["employee_id"]
+    OPTIONAL_FIELDS = ["department", "designation", "status", "join date", "salary"]
+    
+    COVERAGE = {
+        "metrics": ["headcount", "turnover_rate"],
+        "charts": ["department_distribution", "designation_distribution"]
+    }
 
     def validate(self) -> None:
         for df in self.df_map.values():
             norm = self._normalise_columns(df)
-            if "employee" in norm.columns and any(c in norm.columns for c in ["role", "salary", "department"]):
+            has_emp = any("employee_id" in str(c) for c in norm.columns)
+            has_other = any(any(req in str(c) for c in norm.columns) for req in ["designation", "salary", "department"])
+            if has_emp and has_other:
                 return
-        raise ValueError("Employee report must contain employee and role/department/salary columns.")
+        raise ValueError("Employee report must contain employee_id and designation/department/salary columns.")
 
     def parse(self) -> ReportResult:
         documents = []
@@ -33,10 +32,10 @@ class EmployeeReport(BaseReport):
             norm = self._normalise_columns(df)
             for _, row in norm.iterrows():
                 parts = []
-                if pd.notna(row.get("employee")):
-                    parts.append(f"Employee: {row['employee']}")
-                if pd.notna(row.get("role")):
-                    parts.append(f"Role: {row['role']}")
+                if pd.notna(row.get("employee_id")):
+                    parts.append(f"Employee ID: {row['employee_id']}")
+                if pd.notna(row.get("designation")):
+                    parts.append(f"Role: {row['designation']}")
                 if pd.notna(row.get("department")):
                     parts.append(f"Department: {row['department']}")
                 if pd.notna(row.get("status")):
@@ -46,11 +45,16 @@ class EmployeeReport(BaseReport):
                 if pd.notna(row.get("salary")):
                     parts.append(f"Salary: {row['salary']}")
                 
-                known = {"employee", "role", "department", "status", "join date", "salary"}
+                known = {"employee_id", "designation", "department", "status", "join date", "salary"}
                 for col, val in row.items():
                     if col not in known and pd.notna(val):
                         parts.append(f"{col.title()}: {val}")
                 if parts:
+                    # Capture canonical fields for metadata
+                    canonical_dict = {
+                        str(col): str(val) for col, val in row.items() if pd.notna(val)
+                    }
+                    import json
                     documents.append(self._make_document(
                         text="\n".join(parts),
                         report_type=ReportType.EMPLOYEE,
@@ -58,6 +62,7 @@ class EmployeeReport(BaseReport):
                         source_file=self.source_file,
                         source_type=self.source_type,
                         sheet=sheet_name,
+                        extra={"key_values_json": json.dumps(canonical_dict)}
                     ))
         return ReportResult(
             report_type=ReportType.EMPLOYEE,

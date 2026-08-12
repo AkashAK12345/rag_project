@@ -24,6 +24,7 @@ they can read BusinessContext.sections without parsing the assembled string.
 """
 
 import re
+import json
 from collections import defaultdict
 
 from core.logging import get_logger
@@ -212,7 +213,15 @@ class BusinessContextBuilder:
             lines.append(f"  [{idx}] {provenance}\n      {display_text}")
 
             # --- Extract BusinessObservation ---
-            key_values = self._extract_key_values(text, summary_hints)
+            key_values_json = metadata.get("key_values_json")
+            if key_values_json:
+                try:
+                    key_values = json.loads(key_values_json)
+                except Exception:
+                    key_values = self._extract_key_values(text, summary_hints)
+            else:
+                key_values = self._extract_key_values(text, summary_hints)
+                
             observations.append(BusinessObservation(
                 domain=domain,
                 report_type=report_type,
@@ -224,6 +233,19 @@ class BusinessContextBuilder:
             ))
 
         formatted = "\n".join(lines)
+
+        # [DIAG] Log the first 3 observations so we can verify key_values are populated
+        for i, obs in enumerate(observations[:3]):
+            logger.debug(
+                f"[DIAG] BusinessContextBuilder [{domain.value}] obs[{i}] "
+                f"key_values={obs.key_values}"
+            )
+        if len(observations) > 3:
+            logger.debug(
+                f"[DIAG] BusinessContextBuilder [{domain.value}] ... "
+                f"{len(observations) - 3} more observation(s) not shown."
+            )
+
         return DomainSection(
             domain=domain,
             document_count=len(nodes),

@@ -1,9 +1,11 @@
 {
     "indexed_files": [
         "dummy.csv",
-        "dummy_report.csv",
-        "processed_data.xlsx",
+        "WorkLocationReport.xls_080526060115AM950 (1).xlsx",
         "Purchase Report Alwarpet.xlsx",
-        "WorkLocationReport.xls_080526060115AM950 (1).xlsx"
+        "processed_data.xlsx",
+        "WorkLocationReport.xls_080526060115AM950.xlsx",
+        "RawMaterial_Report_2026_05_08_11_18_47.xlsx",
+        "dummy_report.csv"
     ]
 }

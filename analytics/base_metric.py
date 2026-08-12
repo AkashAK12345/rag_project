@@ -5,7 +5,10 @@ Abstract interface for domain-specific metric calculators.
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from schemas.dashboard import ChartSeries
 
 from schemas.business_metric import BusinessMetric
 from schemas.query_context import BusinessObservation
@@ -34,3 +37,10 @@ class BaseCalculator(ABC):
             A list of computed BusinessMetric objects.
         """
         ...
+        
+    def calculate_charts(self, observations: List[BusinessObservation], required_metrics: List[str]) -> List['ChartSeries']:
+        """
+        Compute chart datasets from raw observations.
+        Defaults to an empty list. Override in specific calculators.
+        """
+        return []

@@ -6,6 +6,7 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+*.db
 
 # Environment variables
 .env
@@ -13,12 +14,16 @@ __pycache__/
 # Uploaded reports
 uploads/
 
-# Generated vector stores
+# Generated vector stores & capabilities
+storage/vector_store/
+storage/capabilities/
 storage/default__vector_store.json
 storage/image__vector_store.json
+openapi_dump.json
 
 # Logs
 *.log
+logs/
 
 # IDE
 .vscode/
