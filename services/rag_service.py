@@ -64,6 +64,23 @@ class RagService:
             context_window=2048,
         )
 
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if gemini_api_key:
+            try:
+                from llama_index.embeddings.gemini import GeminiEmbedding
+                Settings.embed_model = GeminiEmbedding(
+                    model_name="models/embedding-001",
+                    api_key=gemini_api_key
+                )
+                logger.info("RagService: Using Gemini API for embeddings.")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Gemini embeddings: {e}. Falling back to local model.")
+                self._fallback_to_local_embeddings()
+        else:
+            logger.info("RagService: No GEMINI_API_KEY found. Using local HuggingFace embeddings.")
+            self._fallback_to_local_embeddings()
+
+    def _fallback_to_local_embeddings(self):
         Settings.embed_model = HuggingFaceEmbedding(
             model_name="BAAI/bge-small-en-v1.5"
         )

@@ -12,7 +12,7 @@ import { DonutChart } from '@/components/dashboard/charts/DonutChart';
 import { useAnalyticsDashboard } from '@/hooks/useDashboard';
 
 export function AnalyticsPage() {
-  const { data, isLoading, isError, refetch } = useAnalyticsDashboard();
+  const { data, isLoading, isError, error, refetch } = useAnalyticsDashboard();
 
   if (isLoading) {
     return (
@@ -24,10 +24,11 @@ export function AnalyticsPage() {
   }
 
   if (isError || !data) {
+    const errorMessage = (error as any)?.response?.data?.detail?.message || "Failed to load analytics dashboard";
     return (
       <Box sx={{ p: 4 }}>
         <PageHeader title="Business Analytics" subtitle="Comprehensive performance metrics" />
-        <ErrorState message="Failed to load analytics dashboard" onRetry={() => refetch()} />
+        <ErrorState message={errorMessage} onRetry={() => refetch()} />
       </Box>
     );
   }

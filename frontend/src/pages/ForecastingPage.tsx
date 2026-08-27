@@ -12,7 +12,7 @@ import { useForecastDashboard } from '@/hooks/useDashboard';
 
 export function ForecastingPage() {
   const [horizon, setHorizon] = useState('next_month');
-  const { data, isLoading, isError, refetch } = useForecastDashboard(horizon);
+  const { data, isLoading, isError, error, refetch } = useForecastDashboard(horizon);
 
   const horizonSelector = (
     <Select
@@ -37,10 +37,11 @@ export function ForecastingPage() {
   }
 
   if (isError || !data) {
+    const errorMessage = (error as any)?.response?.data?.detail?.message || "Failed to load forecast dashboard";
     return (
       <Box sx={{ p: 4 }}>
         <PageHeader title="Demand Forecasting" subtitle="Predictive business modeling" action={horizonSelector} />
-        <ErrorState message="Failed to load forecast dashboard" onRetry={() => refetch()} />
+        <ErrorState message={errorMessage} onRetry={() => refetch()} />
       </Box>
     );
   }
